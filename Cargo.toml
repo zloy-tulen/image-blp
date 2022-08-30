@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "blp-conv",
+    "image-blp",
+]
