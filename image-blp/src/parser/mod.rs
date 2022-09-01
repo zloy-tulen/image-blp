@@ -1,9 +1,10 @@
 pub mod error;
 
-use super::types::{BlpHeader, BlpImage, BlpVersion};
+use super::types::{BlpHeader, BlpImage, BlpVersion, BlpContent};
 pub use error::Error;
-use nom::{bytes::complete::take, IResult, Err};
+use nom::{bytes::complete::take, number::complete::le_u32, IResult, Err};
 use std::str;
+use log::*;
 
 /// Binary parser for BLP format that produces [Error] when something went wrong
 pub type Parser<'a, T> = IResult<&'a [u8], T, Error<&'a [u8]>>;
@@ -17,8 +18,13 @@ pub fn parse_blp(input: &[u8]) -> Parser<BlpImage> {
 
 fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
     let (input, version) = parse_magic(input)?;
+    let (input, content_field) = le_u32(input)?;
+    let content = content_field.try_into().unwrap_or_else(|_| {
+        warn!("Unexpected value for content {}, defaulting to jpeg", content_field);
+        BlpContent::Jpeg
+    });
 
-    Ok((input, BlpHeader { version }))
+    Ok((input, BlpHeader { version, content }))
 }
 
 fn parse_magic(input: &[u8]) -> Parser<BlpVersion> {
@@ -47,6 +53,7 @@ mod tests {
         let expected = BlpImage {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
+                content: BlpContent::Direct,
             },
         };
         assert_eq!(parsed, expected);
@@ -59,6 +66,7 @@ mod tests {
         let expected = BlpImage {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
+                content: BlpContent::Direct,
             },
         };
         assert_eq!(parsed, expected);
@@ -71,6 +79,7 @@ mod tests {
         let expected = BlpImage {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
+                content: BlpContent::Jpeg,
             },
         };
         assert_eq!(parsed, expected);

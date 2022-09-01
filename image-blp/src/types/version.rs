@@ -2,7 +2,7 @@ use std::str;
 
 /// Version of type format that determines structure of file. Encodes
 /// magic bytes that are expected at start of the file.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BlpVersion {
     Blp0,
     Blp1,
