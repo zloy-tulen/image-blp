@@ -1,10 +1,14 @@
 pub mod error;
 
-use super::types::{BlpHeader, BlpImage, BlpVersion, BlpContent};
+use super::types::{BlpContent, BlpFlags, BlpHeader, BlpImage, BlpVersion};
 pub use error::Error;
-use nom::{bytes::complete::take, number::complete::le_u32, IResult, Err};
-use std::str;
 use log::*;
+use nom::{
+    bytes::complete::take,
+    number::complete::{le_u32, le_u8},
+    Err, IResult,
+};
+use std::str;
 
 /// Binary parser for BLP format that produces [Error] when something went wrong
 pub type Parser<'a, T> = IResult<&'a [u8], T, Error<&'a [u8]>>;
@@ -20,11 +24,55 @@ fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
     let (input, version) = parse_magic(input)?;
     let (input, content_field) = le_u32(input)?;
     let content = content_field.try_into().unwrap_or_else(|_| {
-        warn!("Unexpected value for content {}, defaulting to jpeg", content_field);
+        warn!(
+            "Unexpected value for content {}, defaulting to jpeg",
+            content_field
+        );
         BlpContent::Jpeg
     });
+    let (input, flags) = if version >= BlpVersion::Blp2 {
+        let (input, encoding_type) = le_u8(input)?;
+        let (input, alpha_bits) = le_u8(input)?;
+        let (input, sample_type) = le_u8(input)?;
+        let (input, has_mipmaps) = le_u8(input)?;
+        (
+            input,
+            BlpFlags::Blp2 {
+                encoding_type,
+                alpha_bits,
+                sample_type,
+                has_mipmaps,
+            },
+        )
+    } else {
+        let (input, alpha_bits_raw) = le_u32(input)?;
+        let alpha_bits = if content == BlpContent::Jpeg
+            && (alpha_bits_raw != 0 && alpha_bits_raw != 8)
+        {
+            warn!("For jpeg content detected non standard alpha bits value {} when 0 or 8 is expected, defaulting to 0", alpha_bits_raw);
+            0
+        } else if content == BlpContent::Direct
+            && (alpha_bits_raw != 0
+                && alpha_bits_raw != 1
+                && alpha_bits_raw != 4
+                && alpha_bits_raw != 8)
+        {
+            warn!("For direct content detected non standard alpha bits value {} when 0, 1, 4 or 8 is expected, defaulting to 0", alpha_bits_raw);
+            0
+        } else {
+            alpha_bits_raw
+        };
+        (input, BlpFlags::Old { alpha_bits })
+    };
 
-    Ok((input, BlpHeader { version, content }))
+    Ok((
+        input,
+        BlpHeader {
+            version,
+            content,
+            flags,
+        },
+    ))
 }
 
 fn parse_magic(input: &[u8]) -> Parser<BlpVersion> {
@@ -45,7 +93,7 @@ fn parse_magic(input: &[u8]) -> Parser<BlpVersion> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use test_log::test;
     #[test]
     fn simplest_direct_blp_alpha() {
         let blp_bytes = include_bytes!("../../../assets/simple_with_alpha.blp");
@@ -54,6 +102,7 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Direct,
+                flags: BlpFlags::Old { alpha_bits: 8 },
             },
         };
         assert_eq!(parsed, expected);
@@ -67,6 +116,7 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Direct,
+                flags: BlpFlags::Old { alpha_bits: 0 },
             },
         };
         assert_eq!(parsed, expected);
@@ -80,6 +130,7 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Jpeg,
+                flags: BlpFlags::Old { alpha_bits: 8 },
             },
         };
         assert_eq!(parsed, expected);

@@ -46,6 +46,23 @@ impl From<BlpContent> for u32 {
 pub struct BlpHeader {
     pub version: BlpVersion,
     pub content: BlpContent,
+    pub flags: BlpFlags,
+}
+
+/// Part of header that depends on the version 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum BlpFlags {
+    /// For version >= 2
+    Blp2 {
+        encoding_type: u8, // not documented
+        alpha_bits: u8, 
+        sample_type: u8, // not documented
+        has_mipmaps: u8,
+    },
+    /// For version < 2
+    Old {
+        alpha_bits: u32,
+    }
 }
 
 /// Parsed information from BLP file. The structure of the type
