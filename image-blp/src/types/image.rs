@@ -47,6 +47,8 @@ pub struct BlpHeader {
     pub version: BlpVersion,
     pub content: BlpContent,
     pub flags: BlpFlags,
+    pub width: u32,
+    pub height: u32,
 }
 
 /// Part of header that depends on the version 

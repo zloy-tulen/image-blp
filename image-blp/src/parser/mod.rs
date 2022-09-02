@@ -64,6 +64,8 @@ fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
         };
         (input, BlpFlags::Old { alpha_bits })
     };
+    let (input, width) = le_u32(input)?;
+    let (input, height) = le_u32(input)?;
 
     Ok((
         input,
@@ -71,6 +73,8 @@ fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
             version,
             content,
             flags,
+            width,
+            height,
         },
     ))
 }
@@ -103,6 +107,8 @@ mod tests {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Direct,
                 flags: BlpFlags::Old { alpha_bits: 8 },
+                width: 2,
+                height: 2,
             },
         };
         assert_eq!(parsed, expected);
@@ -117,13 +123,15 @@ mod tests {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Direct,
                 flags: BlpFlags::Old { alpha_bits: 0 },
+                width: 2,
+                height: 2,
             },
         };
         assert_eq!(parsed, expected);
     }
 
     #[test]
-    fn simplest_direct_blp_jpg() {
+    fn simplest_jpg_blp() {
         let blp_bytes = include_bytes!("../../../assets/simple_jpg.blp");
         let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
         let expected = BlpImage {
@@ -131,6 +139,40 @@ mod tests {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Jpeg,
                 flags: BlpFlags::Old { alpha_bits: 8 },
+                width: 2,
+                height: 2,
+            },
+        };
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn rect_direct_blp() {
+        let blp_bytes = include_bytes!("../../../assets/rect_with_alpha.blp");
+        let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
+        let expected = BlpImage {
+            header: BlpHeader {
+                version: BlpVersion::Blp1,
+                content: BlpContent::Direct,
+                flags: BlpFlags::Old { alpha_bits: 8 },
+                width: 2,
+                height: 3,
+            },
+        };
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn rect_jpg_no_alpha_blp() {
+        let blp_bytes = include_bytes!("../../../assets/rect_without_alpha.blp");
+        let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
+        let expected = BlpImage {
+            header: BlpHeader {
+                version: BlpVersion::Blp1,
+                content: BlpContent::Jpeg,
+                flags: BlpFlags::Old { alpha_bits: 0 },
+                width: 2,
+                height: 3,
             },
         };
         assert_eq!(parsed, expected);
