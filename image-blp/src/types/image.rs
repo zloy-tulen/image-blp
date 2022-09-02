@@ -64,6 +64,8 @@ pub enum BlpFlags {
     /// For version < 2
     Old {
         alpha_bits: u32,
+        extra: u32, // no purpose, default is 5
+        has_mipmaps: u32, // boolean
     }
 }
 

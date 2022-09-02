@@ -30,7 +30,7 @@ fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
         );
         BlpContent::Jpeg
     });
-    let (input, flags) = if version >= BlpVersion::Blp2 {
+    let (input, mut flags) = if version >= BlpVersion::Blp2 {
         let (input, encoding_type) = le_u8(input)?;
         let (input, alpha_bits) = le_u8(input)?;
         let (input, sample_type) = le_u8(input)?;
@@ -62,10 +62,29 @@ fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
         } else {
             alpha_bits_raw
         };
-        (input, BlpFlags::Old { alpha_bits })
+        (
+            input,
+            BlpFlags::Old {
+                alpha_bits,
+                extra: 0,       // filled later
+                has_mipmaps: 0, // filled later
+            },
+        )
     };
     let (input, width) = le_u32(input)?;
     let (input, height) = le_u32(input)?;
+    let input = if let BlpFlags::Old {
+        extra, has_mipmaps, ..
+    } = &mut flags
+    {
+        let (input, extra_value) = le_u32(input)?;
+        let (input, has_mipmaps_value) = le_u32(input)?;
+        *extra = extra_value;
+        *has_mipmaps = has_mipmaps_value;
+        input
+    } else {
+        input
+    };
 
     Ok((
         input,
@@ -106,7 +125,11 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Direct,
-                flags: BlpFlags::Old { alpha_bits: 8 },
+                flags: BlpFlags::Old {
+                    alpha_bits: 8,
+                    extra: 3,
+                    has_mipmaps: 5,
+                },
                 width: 2,
                 height: 2,
             },
@@ -122,7 +145,11 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Direct,
-                flags: BlpFlags::Old { alpha_bits: 0 },
+                flags: BlpFlags::Old {
+                    alpha_bits: 0,
+                    extra: 5,
+                    has_mipmaps: 5,
+                },
                 width: 2,
                 height: 2,
             },
@@ -138,7 +165,11 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Jpeg,
-                flags: BlpFlags::Old { alpha_bits: 8 },
+                flags: BlpFlags::Old {
+                    alpha_bits: 8,
+                    extra: 3,
+                    has_mipmaps: 5,
+                },
                 width: 2,
                 height: 2,
             },
@@ -154,7 +185,11 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Direct,
-                flags: BlpFlags::Old { alpha_bits: 8 },
+                flags: BlpFlags::Old {
+                    alpha_bits: 8,
+                    extra: 3,
+                    has_mipmaps: 5,
+                },
                 width: 2,
                 height: 3,
             },
@@ -170,7 +205,11 @@ mod tests {
             header: BlpHeader {
                 version: BlpVersion::Blp1,
                 content: BlpContent::Jpeg,
-                flags: BlpFlags::Old { alpha_bits: 0 },
+                flags: BlpFlags::Old {
+                    alpha_bits: 0,
+                    extra: 5,
+                    has_mipmaps: 5,
+                },
                 width: 2,
                 height: 3,
             },
