@@ -348,7 +348,10 @@ fit within the file and it is recommended a warning be generated.
 
 ## Direct Content
 
-For CONTENT_DIRECT BLP files the following header\...
+For CONTENT_DIRECT BLP files the following header:
+```
+uint32_t cmap[256];
+```
 
 The cmap field array is the colour look up table used for an indexed
 colour model. Each element represents 24 bit RGB colour component values
