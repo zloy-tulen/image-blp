@@ -63,6 +63,28 @@ impl BlpHeader {
     pub fn has_mipmaps(&self) -> bool {
         self.flags.has_mipmaps()
     }
+
+    /// Return expected size of mipmap for the given mipmap level.
+    /// 0 level means original image.
+    pub fn mipmap_size(&self, i: u32) -> (u32, u32) {
+        if i == 0 {
+            (self.width, self.height)
+        } else {
+            ((self.width >> i).max(1), (self.height >> i).max(1))
+        }
+    }
+
+    /// Return expected count of pixels in mipmap at the level i.
+    /// 0 level means original image.
+    pub fn mipmap_pixels(&self, i: u32) -> u32 {
+        let (w, h) = self.mipmap_size(i);
+        w * h
+    }
+
+    /// Return alpha bits count in encoding
+    pub fn alpha_bits(&self) -> u32 {
+        self.flags.alpha_bits()
+    }
 }
 
 impl Default for BlpHeader {
@@ -111,6 +133,14 @@ impl BlpFlags {
         match self {
             BlpFlags::Blp2 { has_mipmaps, .. } => *has_mipmaps != 0,
             BlpFlags::Old { has_mipmaps, .. } => *has_mipmaps != 0,
+        }
+    }
+
+    /// Get count of bits alpha channel is encoded in content
+    pub fn alpha_bits(&self) -> u32 {
+        match self {
+            BlpFlags::Blp2 { alpha_bits, .. } => *alpha_bits as u32,
+            BlpFlags::Old { alpha_bits, .. } => *alpha_bits,
         }
     }
 }
@@ -176,7 +206,45 @@ pub struct BlpJpeg {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlpDirect {}
+pub struct BlpDirect {
+    /// The cmap field array is the colour look up table used for an indexed
+    /// colour model. Each element represents 24 bit RGB colour component values
+    /// in the order of 0xBBGGRR. The final byte is alignment padding and will
+    /// not alter the decoded image in any way. One might be able to improve the
+    /// file compressibility by carefully choosing padding values.
+    pub cmap: Vec<u32>,
+    /// Image itself and all mipmaps levels. If there are no mipmaps,
+    /// the length of the vector is 1.
+    pub images: Vec<DirectImage>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DirectImage {
+    /// BGR component values can be obtained by using indexedRGB values as an
+    /// index in lutBGR. When producing such values using color matching be
+    /// aware of the linear nature of the color space. For best results it is
+    /// recommended that color matching be performed in sRGB or other perceptual
+    /// color spaces.
+    pub indexed_rgb: Vec<u8>,
+
+    /// Alpha component can be obtained by breaking indexedAlpha into a bit
+    /// field of alphaBits bit length fragments and then using the bit fragment
+    /// as the alpha value for the pixel. The alpha pixel components are ordered
+    /// from least significant to most significant bit with bytes following the
+    /// same pixel order as indexedRGB. Since the alpha is to alphaBits
+    /// precision it may need to be resampled to 8 bits be useful depending on
+    /// the imaging framework used.
+    ///
+    /// Example of different alpha packing in a byte:
+    ///
+    /// ```text
+    /// MSB <-> LSB where number indicates the sequential pixel the bits belong to
+    /// ALPHA_8B -> 11111111
+    /// ALPHA_4B -> 22221111
+    /// ALPHA_1B -> 87654321
+    /// ```
+    pub indexed_alpha: Vec<u8>,
+}
 
 #[cfg(test)]
 mod tests {
