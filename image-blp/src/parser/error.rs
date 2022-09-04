@@ -13,6 +13,10 @@ pub enum Error<I: fmt::Debug> {
     MissingImage(u32),
     #[error("Part of image exceeds bounds of file for mipmap number ${0}")]
     OutOfBounds(u32),
+    #[error("BLP2 doesn't support external mipmaps")]
+    Blp2NoExternalMips,
+    #[error("Library doesn't support compression tag: ${0}")]
+    Blp2UnknownCompression(u8),
     #[error("Error ${1:?} at: ${0:?}")]
     Nom(I, ErrorKind),
     #[error("Context: ${0}. Error: ${1}")]

@@ -22,7 +22,16 @@ pub fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
         BlpContentTag::Jpeg
     });
     let (input, mut flags) = if version >= BlpVersion::Blp2 {
-        let (input, compression) = context("compression field", le_u8)(input)?;
+        let (input, compression_field) = context("compression field", le_u8)(input)?;
+        let compression: Compression = compression_field.try_into().or_else(|_| {
+            error!(
+                "Unexpected value for compression {}, defaulting to jpeg",
+                content_field
+            );
+            Err(Err::Failure(Error::<&[u8]>::Blp2UnknownCompression(
+                compression_field,
+            )))
+        })?;
         let (input, alpha_bits) = context("alpha_bits field", le_u8)(input)?;
         let (input, alpha_type) = context("alpha_type field", le_u8)(input)?;
         let (input, has_mipmaps) = context("has_mipmaps field", le_u8)(input)?;

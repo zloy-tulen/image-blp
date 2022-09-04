@@ -58,7 +58,7 @@ impl BlpHeader {
     pub fn mipmaps_count(&self) -> u32 {
         let width_n = (self.width as f32).log2() as u32;
         let height_n = (self.height as f32).log2() as u32;
-        width_n.max(height_n)
+        width_n.min(height_n)
     }
 
     /// Returns 'true' if the header defines that the image has mipmaps
@@ -102,12 +102,51 @@ impl Default for BlpHeader {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Compression {
+    Raw1,
+    Raw3,
+    Dxtc,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct UnknownCompression(u8);
+
+impl fmt::Display for UnknownCompression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unknown compression field value: {}", self.0)
+    }
+}
+
+impl TryFrom<u8> for Compression {
+    type Error = UnknownCompression;
+
+    fn try_from(val: u8) -> Result<Compression, Self::Error> {
+        match val {
+            1 => Ok(Compression::Raw1),
+            2 => Ok(Compression::Dxtc),
+            3 => Ok(Compression::Raw3),
+            _ => Err(UnknownCompression(val)),
+        }
+    }
+}
+
+impl From<Compression> for u8 {
+    fn from(val: Compression) -> u8 {
+        match val {
+            Compression::Raw1 => 1,
+            Compression::Dxtc => 2,
+            Compression::Raw3 => 3,
+        }
+    }
+}
+
 /// Part of header that depends on the version
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BlpFlags {
     /// For version >= 2
     Blp2 {
-        compression: u8, // Compression mode: 1 = raw, 2 = DXTC
+        compression: Compression,
         alpha_bits: u8,  // 0, 1, 7, or 8
         alpha_type: u8,  // 0, 1, 7, or 8
         has_mipmaps: u8,
@@ -142,6 +181,7 @@ impl BlpFlags {
     /// Get count of bits alpha channel is encoded in content
     pub fn alpha_bits(&self) -> u32 {
         match self {
+            BlpFlags::Blp2 { compression, .. } if *compression == Compression::Raw3  => 4,
             BlpFlags::Blp2 { alpha_bits, .. } => *alpha_bits as u32,
             BlpFlags::Old { alpha_bits, .. } => *alpha_bits,
         }
@@ -159,20 +199,27 @@ mod tests {
             height: 256,
             ..Default::default()
         };
-        assert_eq!(header.mipmaps_count(), 9);
+        assert_eq!(header.mipmaps_count(), 8);
 
         let header = BlpHeader {
             width: 1,
             height: 4,
             ..Default::default()
         };
-        assert_eq!(header.mipmaps_count(), 2);
+        assert_eq!(header.mipmaps_count(), 0);
 
         let header = BlpHeader {
-            width: 1,
+            width: 4,
             height: 7,
             ..Default::default()
         };
         assert_eq!(header.mipmaps_count(), 2);
+
+        let header = BlpHeader {
+            width: 768,
+            height: 128,
+            ..Default::default()
+        };
+        assert_eq!(header.mipmaps_count(), 7);
     }
 }
