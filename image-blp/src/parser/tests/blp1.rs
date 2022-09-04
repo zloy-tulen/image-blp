@@ -2,7 +2,7 @@ use super::super::*;
 use test_log::test;
 
 #[test]
-fn simplest_direct_blp_alpha() {
+fn blp1_simplest_direct_alpha() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/simple_with_alpha.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -15,12 +15,16 @@ fn simplest_direct_blp_alpha() {
         },
         width: 2,
         height: 2,
+        mipmap_locator: MipmapLocator::Internal {
+            offsets: [1180; 16],
+            sizes: [8; 16],
+        },
     };
     assert_eq!(parsed.header, header);
 }
 
 #[test]
-fn simplest_direct_blp_noalpha() {
+fn blp1_simplest_direct_noalpha() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/simple_without_alpha.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -33,12 +37,16 @@ fn simplest_direct_blp_noalpha() {
         },
         width: 2,
         height: 2,
+        mipmap_locator: MipmapLocator::Internal {
+            offsets: [1180; 16],
+            sizes: [4; 16],
+        },
     };
     assert_eq!(parsed.header, header);
 }
 
 #[test]
-fn simplest_jpg_blp() {
+fn blp1_simplest_blp() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/simple_jpg.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -51,12 +59,16 @@ fn simplest_jpg_blp() {
         },
         width: 2,
         height: 2,
+        mipmap_locator: MipmapLocator::Internal {
+            offsets: [160; 16],
+            sizes: [482; 16],
+        },
     };
     assert_eq!(parsed.header, header);
 }
 
 #[test]
-fn rect_direct_blp() {
+fn blp1_rect_direct() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/rect_with_alpha.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -69,12 +81,16 @@ fn rect_direct_blp() {
         },
         width: 2,
         height: 3,
+        mipmap_locator: MipmapLocator::Internal {
+            offsets: [1180; 16],
+            sizes: [12; 16],
+        },
     };
     assert_eq!(parsed.header, header);
 }
 
 #[test]
-fn rect_jpg_no_alpha_blp() {
+fn blp1_rect_jpg_no_alpha() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/rect_without_alpha.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -87,6 +103,10 @@ fn rect_jpg_no_alpha_blp() {
         },
         width: 2,
         height: 3,
+        mipmap_locator: MipmapLocator::Internal {
+            offsets: [160; 16],
+            sizes: [448; 16],
+        },
     };
     assert_eq!(parsed.header, header);
 }

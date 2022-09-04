@@ -1,0 +1,178 @@
+pub use super::locator::MipmapLocator;
+pub use super::version::BlpVersion;
+use std::fmt;
+
+/// The content field determines how the image data is stored. CONTENT_JPEG
+/// uses non-standard JPEG (JFIF) file compression of BGRA colour component
+/// values rather than the usual Y′CbCr color component values.
+/// CONTENT_DIRECT refers to a variety of storage formats which can be
+/// directly read as pixel values.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum BlpContentTag {
+    Jpeg,
+    Direct,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct UnknownContent(u32);
+
+impl fmt::Display for UnknownContent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unknown content field value: {}", self.0)
+    }
+}
+
+impl TryFrom<u32> for BlpContentTag {
+    type Error = UnknownContent;
+
+    fn try_from(val: u32) -> Result<BlpContentTag, Self::Error> {
+        match val {
+            0 => Ok(BlpContentTag::Jpeg),
+            1 => Ok(BlpContentTag::Direct),
+            _ => Err(UnknownContent(val)),
+        }
+    }
+}
+
+impl From<BlpContentTag> for u32 {
+    fn from(val: BlpContentTag) -> u32 {
+        match val {
+            BlpContentTag::Jpeg => 0,
+            BlpContentTag::Direct => 1,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BlpHeader {
+    pub version: BlpVersion,
+    pub content: BlpContentTag,
+    pub flags: BlpFlags,
+    pub width: u32,
+    pub height: u32,
+    pub mipmap_locator: MipmapLocator,
+}
+
+impl BlpHeader {
+    /// Calculate needed count of mipmaps for the defined size
+    pub fn mipmaps_count(&self) -> u32 {
+        let width_n = (self.width as f32).log2() as u32;
+        let height_n = (self.height as f32).log2() as u32;
+        width_n.max(height_n)
+    }
+
+    /// Returns 'true' if the header defines that the image has mipmaps
+    pub fn has_mipmaps(&self) -> bool {
+        self.flags.has_mipmaps()
+    }
+
+    /// Return expected size of mipmap for the given mipmap level.
+    /// 0 level means original image.
+    pub fn mipmap_size(&self, i: u32) -> (u32, u32) {
+        if i == 0 {
+            (self.width, self.height)
+        } else {
+            ((self.width >> i).max(1), (self.height >> i).max(1))
+        }
+    }
+
+    /// Return expected count of pixels in mipmap at the level i.
+    /// 0 level means original image.
+    pub fn mipmap_pixels(&self, i: u32) -> u32 {
+        let (w, h) = self.mipmap_size(i);
+        w * h
+    }
+
+    /// Return alpha bits count in encoding
+    pub fn alpha_bits(&self) -> u32 {
+        self.flags.alpha_bits()
+    }
+}
+
+impl Default for BlpHeader {
+    fn default() -> Self {
+        BlpHeader {
+            version: BlpVersion::Blp1,
+            content: BlpContentTag::Jpeg,
+            flags: Default::default(),
+            width: 1,
+            height: 1,
+            mipmap_locator: Default::default(),
+        }
+    }
+}
+
+/// Part of header that depends on the version
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum BlpFlags {
+    /// For version >= 2
+    Blp2 {
+        compression: u8, // Compression mode: 1 = raw, 2 = DXTC
+        alpha_bits: u8,  // 0, 1, 7, or 8
+        alpha_type: u8,  // 0, 1, 7, or 8
+        has_mipmaps: u8,
+    },
+    /// For version < 2
+    Old {
+        alpha_bits: u32,
+        extra: u32,       // no purpose, default is 5
+        has_mipmaps: u32, // boolean
+    },
+}
+
+impl Default for BlpFlags {
+    fn default() -> Self {
+        BlpFlags::Old {
+            alpha_bits: 8,
+            extra: 8,
+            has_mipmaps: 1,
+        }
+    }
+}
+
+impl BlpFlags {
+    /// Returns 'true' if the header defines that the image has mipmaps
+    pub fn has_mipmaps(&self) -> bool {
+        match self {
+            BlpFlags::Blp2 { has_mipmaps, .. } => *has_mipmaps != 0,
+            BlpFlags::Old { has_mipmaps, .. } => *has_mipmaps != 0,
+        }
+    }
+
+    /// Get count of bits alpha channel is encoded in content
+    pub fn alpha_bits(&self) -> u32 {
+        match self {
+            BlpFlags::Blp2 { alpha_bits, .. } => *alpha_bits as u32,
+            BlpFlags::Old { alpha_bits, .. } => *alpha_bits,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mipmap_count() {
+        let header = BlpHeader {
+            width: 512,
+            height: 256,
+            ..Default::default()
+        };
+        assert_eq!(header.mipmaps_count(), 9);
+
+        let header = BlpHeader {
+            width: 1,
+            height: 4,
+            ..Default::default()
+        };
+        assert_eq!(header.mipmaps_count(), 2);
+
+        let header = BlpHeader {
+            width: 1,
+            height: 7,
+            ..Default::default()
+        };
+        assert_eq!(header.mipmaps_count(), 2);
+    }
+}

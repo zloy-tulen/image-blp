@@ -34,6 +34,7 @@ fn blp0_test() {
         },
         width: 512,
         height: 256,
+        mipmap_locator: MipmapLocator::External,
     };
     assert_eq!(parsed.header, header);
     assert_eq!(parsed.get_content_jpeg().expect("jpeg").images.len(), 10);

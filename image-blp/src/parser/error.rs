@@ -1,6 +1,6 @@
-use nom::{error::{ParseError, ErrorKind}};
-use thiserror::Error;
+use nom::error::{ContextError, ErrorKind, ParseError};
 use std::fmt;
+use thiserror::Error;
 
 /// Errors that BLP parser can produce
 #[derive(Debug, Error)]
@@ -15,6 +15,8 @@ pub enum Error<I: fmt::Debug> {
     OutOfBounds(u32),
     #[error("Error ${1:?} at: ${0:?}")]
     Nom(I, ErrorKind),
+    #[error("Context: ${0}. Error: ${1}")]
+    Context(String, Box<Self>),
 }
 
 impl<'a> From<(&'a [u8], ErrorKind)> for Error<&'a [u8]> {
@@ -30,5 +32,11 @@ impl<'a> ParseError<&'a [u8]> for Error<&'a [u8]> {
 
     fn append(_: &[u8], _: ErrorKind, other: Self) -> Self {
         other
+    }
+}
+
+impl<'a> ContextError<&'a [u8]> for Error<&'a [u8]> {
+    fn add_context(_input: &'a [u8], ctx: &'static str, other: Self) -> Self {
+        Error::Context(ctx.to_owned(), Box::new(other))
     }
 }

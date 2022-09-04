@@ -1,18 +1,20 @@
 pub mod error;
+pub mod types;
+mod header;
 
 #[cfg(test)]
 mod tests;
 
 use super::types::*;
 pub use error::Error;
+use header::parse_header;
 use log::*;
 use nom::{
-    bytes::complete::take,
+    error::context,
     multi::count,
     number::complete::{le_u32, le_u8},
     Err, IResult,
 };
-use std::str;
 
 /// Binary parser for BLP format that produces [Error] when something went wrong
 pub type Parser<'a, T> = IResult<&'a [u8], T, Error<&'a [u8]>>;
@@ -33,156 +35,54 @@ pub fn parse_blp_with_externals<'a, F>(
     external_mipmaps: F,
 ) -> Parser<'a, BlpImage>
 where
-    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
+    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> + Clone,
 {
     // Parse header
-    let (input, header) = parse_header(root_input)?;
-    // Parse mipmap locator
-    let (input, mips_locator) = parse_mipmap_locator(&header, input)?;
+    let (input, header) = context("header", parse_header)(root_input)?;
+
     // Parse image content
-    let (input, content) =
-        parse_content(&header, &mips_locator, external_mipmaps, root_input, input)?;
+    let (input, content) = context("image content", |input| {
+        parse_content(
+            &header,
+            external_mipmaps.clone(),
+            root_input,
+            input,
+        )
+    })(input)?;
 
     Ok((input, BlpImage { header, content }))
 }
 
-fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
-    let (input, version) = parse_magic(input)?;
-    let (input, content_field) = le_u32(input)?;
-    let content = content_field.try_into().unwrap_or_else(|_| {
-        warn!(
-            "Unexpected value for content {}, defaulting to jpeg",
-            content_field
-        );
-        BlpContentTag::Jpeg
-    });
-    let (input, mut flags) = if version >= BlpVersion::Blp2 {
-        let (input, compression) = le_u8(input)?;
-        let (input, alpha_bits) = le_u8(input)?;
-        let (input, alpha_type) = le_u8(input)?;
-        let (input, has_mipmaps) = le_u8(input)?;
-        (
-            input,
-            BlpFlags::Blp2 {
-                compression,
-                alpha_bits,
-                alpha_type,
-                has_mipmaps,
-            },
-        )
-    } else {
-        let (input, alpha_bits_raw) = le_u32(input)?;
-        let alpha_bits = if content == BlpContentTag::Jpeg
-            && (alpha_bits_raw != 0 && alpha_bits_raw != 8)
-        {
-            warn!("For jpeg content detected non standard alpha bits value {} when 0 or 8 is expected, defaulting to 0", alpha_bits_raw);
-            0
-        } else if content == BlpContentTag::Direct
-            && (alpha_bits_raw != 0
-                && alpha_bits_raw != 1
-                && alpha_bits_raw != 4
-                && alpha_bits_raw != 8)
-        {
-            warn!("For direct content detected non standard alpha bits value {} when 0, 1, 4 or 8 is expected, defaulting to 0", alpha_bits_raw);
-            0
-        } else {
-            alpha_bits_raw
-        };
-        (
-            input,
-            BlpFlags::Old {
-                alpha_bits,
-                extra: 0,       // filled later
-                has_mipmaps: 0, // filled later
-            },
-        )
-    };
-    let (input, width) = le_u32(input)?;
-    let (input, height) = le_u32(input)?;
-    let input = if let BlpFlags::Old {
-        extra, has_mipmaps, ..
-    } = &mut flags
-    {
-        let (input, extra_value) = le_u32(input)?;
-        let (input, has_mipmaps_value) = le_u32(input)?;
-        *extra = extra_value;
-        *has_mipmaps = has_mipmaps_value;
-        input
-    } else {
-        input
-    };
-
-    Ok((
-        input,
-        BlpHeader {
-            version,
-            content,
-            flags,
-            width,
-            height,
-        },
-    ))
-}
-
-fn parse_magic(input: &[u8]) -> Parser<BlpVersion> {
-    let mut magic_fixed: [u8; 4] = Default::default();
-    let (input, magic) = take(4_u32)(input)?;
-    magic_fixed.copy_from_slice(magic);
-    let version = BlpVersion::from_magic(magic_fixed).ok_or_else(|| {
-        Err::Failure(Error::WrongMagic(
-            str::from_utf8(magic)
-                .map(|s| s.to_owned())
-                .unwrap_or_else(|_| format!("{:?}", magic)),
-        ))
-    })?;
-
-    Ok((input, version))
-}
-
-fn parse_mipmap_locator<'a>(header: &BlpHeader, input: &'a [u8]) -> Parser<'a, MipmapLocator> {
-    if header.version >= BlpVersion::Blp1 {
-        let mut offsets: [u32; 16] = Default::default();
-        let mut sizes: [u32; 16] = Default::default();
-        let (input, offsets_vec) = count(le_u32, 16)(input)?;
-        offsets.copy_from_slice(&offsets_vec);
-        let (input, sizes_vec) = count(le_u32, 16)(input)?;
-        sizes.copy_from_slice(&sizes_vec);
-        Ok((input, MipmapLocator::Internal { offsets, sizes }))
-    } else {
-        // For BLP0 mipmaps are located in external files
-        Ok((input, MipmapLocator::External))
-    }
-}
-
 fn parse_content<'a, F>(
     blp_header: &BlpHeader,
-    mips_locator: &MipmapLocator,
     external_mipmaps: F,
     original_input: &'a [u8],
     input: &'a [u8],
 ) -> Parser<'a, BlpContent>
 where
-    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
+    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> + Clone,
 {
     match blp_header.content {
         BlpContentTag::Jpeg => {
-            let (input, content) = parse_jpeg_contentt(
-                blp_header,
-                mips_locator,
-                external_mipmaps,
-                original_input,
-                input,
-            )?;
+            let (input, content) = context("jpeg content", |input| {
+                parse_jpeg_contentt(
+                    blp_header,
+                    external_mipmaps.clone(),
+                    original_input,
+                    input,
+                )
+            })(input)?;
             Ok((input, BlpContent::Jpeg(content)))
         }
         BlpContentTag::Direct => {
-            let (input, content) = parse_direct_content(
-                blp_header,
-                mips_locator,
-                external_mipmaps,
-                original_input,
-                input,
-            )?;
+            let (input, content) = context("direct content", |input| {
+                parse_direct_content(
+                    blp_header,
+                    external_mipmaps.clone(),
+                    original_input,
+                    input,
+                )
+            })(input)?;
             Ok((input, BlpContent::Direct(content)))
         }
     }
@@ -190,7 +90,6 @@ where
 
 fn parse_jpeg_contentt<'a, F>(
     blp_header: &BlpHeader,
-    mips_locator: &MipmapLocator,
     mut external_mipmaps: F,
     original_input: &'a [u8],
     input: &'a [u8],
@@ -202,7 +101,7 @@ where
     let (input, header) = count(le_u8, header_size as usize)(input)?;
     let mut images = vec![];
 
-    match mips_locator {
+    match blp_header.mipmap_locator {
         MipmapLocator::External => {
             let image0_bytes_opt =
                 external_mipmaps(0).map_err(|e| Err::Failure(Error::ExternalMipmap(0, e)))?;
@@ -263,7 +162,6 @@ where
 
 fn parse_direct_content<'a, F>(
     blp_header: &BlpHeader,
-    mips_locator: &MipmapLocator,
     mut external_mipmaps: F,
     original_input: &'a [u8],
     input: &'a [u8],
@@ -274,7 +172,7 @@ where
     let (input, cmap) = count(le_u32, 256)(input)?;
     let mut images = vec![];
 
-    match mips_locator {
+    match blp_header.mipmap_locator {
         MipmapLocator::External => {
             let mut read_mipmap = |i| {
                 let image_bytes_opt =
