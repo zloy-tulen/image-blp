@@ -104,9 +104,9 @@ impl Default for BlpHeader {
 pub enum BlpFlags {
     /// For version >= 2
     Blp2 {
-        encoding_type: u8, // not documented
-        alpha_bits: u8,
-        sample_type: u8, // not documented
+        compression: u8, // Compression mode: 1 = raw, 2 = DXTC
+        alpha_bits: u8, // 0, 1, 7, or 8
+        alpha_type: u8, // 0, 1, 7, or 8
         has_mipmaps: u8,
     },
     /// For version < 2

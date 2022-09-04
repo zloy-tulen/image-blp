@@ -1,5 +1,8 @@
 pub mod error;
 
+#[cfg(test)]
+mod tests;
+
 use super::types::*;
 pub use error::Error;
 use log::*;
@@ -54,16 +57,16 @@ fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
         BlpContentTag::Jpeg
     });
     let (input, mut flags) = if version >= BlpVersion::Blp2 {
-        let (input, encoding_type) = le_u8(input)?;
+        let (input, compression) = le_u8(input)?;
         let (input, alpha_bits) = le_u8(input)?;
-        let (input, sample_type) = le_u8(input)?;
+        let (input, alpha_type) = le_u8(input)?;
         let (input, has_mipmaps) = le_u8(input)?;
         (
             input,
             BlpFlags::Blp2 {
-                encoding_type,
+                compression,
                 alpha_bits,
-                sample_type,
+                alpha_type,
                 has_mipmaps,
             },
         )
@@ -344,137 +347,4 @@ where
     }
 
     Ok((input, BlpDirect { cmap, images }))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test_log::test;
-    #[test]
-    fn simplest_direct_blp_alpha() {
-        let blp_bytes = include_bytes!("../../../assets/simple_with_alpha.blp");
-        let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-        let header = BlpHeader {
-            version: BlpVersion::Blp1,
-            content: BlpContentTag::Direct,
-            flags: BlpFlags::Old {
-                alpha_bits: 8,
-                extra: 3,
-                has_mipmaps: 5,
-            },
-            width: 2,
-            height: 2,
-        };
-        assert_eq!(parsed.header, header);
-    }
-
-    #[test]
-    fn simplest_direct_blp_noalpha() {
-        let blp_bytes = include_bytes!("../../../assets/simple_without_alpha.blp");
-        let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-        let header = BlpHeader {
-            version: BlpVersion::Blp1,
-            content: BlpContentTag::Direct,
-            flags: BlpFlags::Old {
-                alpha_bits: 0,
-                extra: 5,
-                has_mipmaps: 5,
-            },
-            width: 2,
-            height: 2,
-        };
-        assert_eq!(parsed.header, header);
-    }
-
-    #[test]
-    fn simplest_jpg_blp() {
-        let blp_bytes = include_bytes!("../../../assets/simple_jpg.blp");
-        let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-        let header = BlpHeader {
-            version: BlpVersion::Blp1,
-            content: BlpContentTag::Jpeg,
-            flags: BlpFlags::Old {
-                alpha_bits: 8,
-                extra: 3,
-                has_mipmaps: 5,
-            },
-            width: 2,
-            height: 2,
-        };
-        assert_eq!(parsed.header, header);
-    }
-
-    #[test]
-    fn rect_direct_blp() {
-        let blp_bytes = include_bytes!("../../../assets/rect_with_alpha.blp");
-        let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-        let header = BlpHeader {
-            version: BlpVersion::Blp1,
-            content: BlpContentTag::Direct,
-            flags: BlpFlags::Old {
-                alpha_bits: 8,
-                extra: 3,
-                has_mipmaps: 5,
-            },
-            width: 2,
-            height: 3,
-        };
-        assert_eq!(parsed.header, header);
-    }
-
-    #[test]
-    fn rect_jpg_no_alpha_blp() {
-        let blp_bytes = include_bytes!("../../../assets/rect_without_alpha.blp");
-        let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-        let header = BlpHeader {
-            version: BlpVersion::Blp1,
-            content: BlpContentTag::Jpeg,
-            flags: BlpFlags::Old {
-                alpha_bits: 0,
-                extra: 5,
-                has_mipmaps: 5,
-            },
-            width: 2,
-            height: 3,
-        };
-        assert_eq!(parsed.header, header);
-    }
-
-    #[test]
-    fn blp0_test() {
-        let blp_bytes = include_bytes!("../../../assets/blp0/WyvernRider.blp");
-        let blp_mipmaps = vec![
-            include_bytes!("../../../assets/blp0/WyvernRider.b00").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b01").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b02").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b03").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b04").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b05").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b06").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b07").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b08").to_vec(),
-            include_bytes!("../../../assets/blp0/WyvernRider.b09").to_vec(),
-        ];
-        let (_, parsed) = parse_blp_with_externals(blp_bytes, |i| {
-            if (i as usize) < blp_mipmaps.len() {
-                Ok(Some(&blp_mipmaps[i as usize]))
-            } else {
-                Ok(None)
-            }
-        })
-        .expect("successfull parsing");
-        let header = BlpHeader {
-            version: BlpVersion::Blp0,
-            content: BlpContentTag::Jpeg,
-            flags: BlpFlags::Old {
-                alpha_bits: 8,
-                extra: 4,
-                has_mipmaps: 1,
-            },
-            width: 512,
-            height: 256,
-        };
-        assert_eq!(parsed.header, header);
-        assert_eq!(parsed.get_content_jpeg().expect("jpeg").images.len(), 10);
-    }
 }

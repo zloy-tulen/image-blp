@@ -1,2 +1,4 @@
 target/
 *.blp
+*.BLP
+*.b*
