@@ -1,4 +1,5 @@
 use super::direct::*;
+use super::dxtn::*;
 use super::header::*;
 use super::jpeg::*;
 pub use super::version::BlpVersion;
@@ -28,7 +29,14 @@ impl BlpImage {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BlpContent {
     Jpeg(BlpJpeg),
+    /// Used with direct type for BLP0/BLP1 and raw compression in BLP2
     Direct(BlpDirect),
+    /// BLP2 DXT1 compression (no alpha)
+    Dxt1(BlpDxt1),
+    /// BLP2 DXT3 compression (with alpha)
+    Dxt3(BlpDxt3),
+    /// BLP2 DXT5 compression (with alpha)
+    Dxt5(BlpDxt5),
 }
 
 impl BlpContent {
@@ -36,6 +44,9 @@ impl BlpContent {
         match self {
             BlpContent::Jpeg { .. } => BlpContentTag::Jpeg,
             BlpContent::Direct { .. } => BlpContentTag::Direct,
+            BlpContent::Dxt1 { .. } => BlpContentTag::Direct,
+            BlpContent::Dxt3 { .. } => BlpContentTag::Direct,
+            BlpContent::Dxt5 { .. } => BlpContentTag::Direct,
         }
     }
 
@@ -49,6 +60,27 @@ impl BlpContent {
     pub fn get_direct(&self) -> Option<&BlpDirect> {
         match self {
             BlpContent::Direct(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn get_dxt1(&self) -> Option<&BlpDxt1> {
+        match self {
+            BlpContent::Dxt1(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn get_dxt3(&self) -> Option<&BlpDxt3> {
+        match self {
+            BlpContent::Dxt3(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn get_dxt5(&self) -> Option<&BlpDxt5> {
+        match self {
+            BlpContent::Dxt5(v) => Some(v),
             _ => None,
         }
     }

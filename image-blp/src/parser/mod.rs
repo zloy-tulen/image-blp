@@ -64,7 +64,7 @@ where
             let (input, content) = context("direct content", |input| {
                 parse_direct_content(blp_header, external_mipmaps.clone(), original_input, input)
             })(input)?;
-            Ok((input, BlpContent::Direct(content)))
+            Ok((input, content))
         }
     }
 }

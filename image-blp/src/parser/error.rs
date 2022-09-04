@@ -17,6 +17,8 @@ pub enum Error<I: fmt::Debug> {
     Blp2NoExternalMips,
     #[error("Library doesn't support compression tag: ${0}")]
     Blp2UnknownCompression(u8),
+    #[error("Library doesn't support alpha type: ${0}")]
+    Blp2UnknownAlphaType(u8),
     #[error("Error ${1:?} at: ${0:?}")]
     Nom(I, ErrorKind),
     #[error("Context: ${0}. Error: ${1}")]

@@ -58,7 +58,11 @@ impl BlpHeader {
     pub fn mipmaps_count(&self) -> u32 {
         let width_n = (self.width as f32).log2() as u32;
         let height_n = (self.height as f32).log2() as u32;
-        width_n.min(height_n)
+        if self.version == BlpVersion::Blp0 {
+            width_n.max(height_n)
+        } else {
+            width_n.min(height_n)
+        }
     }
 
     /// Returns 'true' if the header defines that the image has mipmaps
@@ -197,6 +201,15 @@ mod tests {
         let header = BlpHeader {
             width: 512,
             height: 256,
+            version: BlpVersion::Blp0,
+            ..Default::default()
+        };
+        assert_eq!(header.mipmaps_count(), 9);
+
+        let header = BlpHeader {
+            width: 512,
+            height: 256,
+            version: BlpVersion::Blp1,
             ..Default::default()
         };
         assert_eq!(header.mipmaps_count(), 8);

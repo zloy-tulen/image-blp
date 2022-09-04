@@ -32,6 +32,7 @@ where
             if blp_header.has_mipmaps() {
                 // funny that there is no hard limit for number of mipmaps
                 for i in 1..blp_header.mipmaps_count() + 1 {
+                    log::trace!("Parsing mipmap level {}/{}", i, blp_header.mipmaps_count());
                     let image_bytes_opt = external_mipmaps(i)
                         .map_err(|e| Err::Failure(Error::ExternalMipmap(i, e)))?;
                     let image_bytes =
