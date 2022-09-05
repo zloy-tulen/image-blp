@@ -18,7 +18,8 @@ where
     F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
 {
     let (input, header_size) = le_u32(input)?;
-    let (input, header) = count(le_u8, header_size as usize)(input)?;
+    // There is two additional bytes that are not covered by the header size 
+    let (input, header) = count(le_u8, (header_size+2) as usize)(input)?;
     let mut images = vec![];
 
     match blp_header.mipmap_locator {
@@ -71,7 +72,7 @@ where
 
             read_image(0)?;
             if blp_header.has_mipmaps() {
-                for i in 1..(blp_header.mipmaps_count() + 1).max(16) {
+                for i in 1..(blp_header.mipmaps_count() + 1).min(16) {
                     read_image(i)?;
                 }
             }

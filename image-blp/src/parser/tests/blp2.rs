@@ -1,4 +1,5 @@
 use super::super::*;
+use crate::encode::encode_blp;
 use test_log::test;
 
 #[test]
@@ -17,16 +18,21 @@ fn blp2_attack() {
         width: 32,
         height: 32,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 2324, 2612, 2684, 2702, 2707, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [1152, 288, 72, 18, 5, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 2324, 2612, 2684, 2702, 2707, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [1152, 288, 72, 18, 5, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
 fn blp2_ui_paid_character_customization() {
-    let blp_bytes = include_bytes!("../../../../assets/blp2/UI-PAIDCHARACTERCUSTOMIZATION-BUTTON.BLP");
+    let blp_bytes =
+        include_bytes!("../../../../assets/blp2/UI-PAIDCHARACTERCUSTOMIZATION-BUTTON.BLP");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
@@ -40,11 +46,17 @@ fn blp2_ui_paid_character_customization() {
         width: 128,
         height: 128,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 66708, 83092, 87188, 88212, 88468, 88532, 88548, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [65536, 16384, 4096, 1024, 256, 64, 16, 4, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 66708, 83092, 87188, 88212, 88468, 88532, 88548, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [
+                65536, 16384, 4096, 1024, 256, 64, 16, 4, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -63,11 +75,13 @@ fn blp2_sun_glare() {
         width: 256,
         height: 256,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [262144, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [1172, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            sizes: [262144, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -86,11 +100,18 @@ fn blp2_oilslickenv_a() {
         width: 768,
         height: 128,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 394388, 492692, 517268, 523412, 524948, 525332, 525428, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [393216, 98304, 24576, 6144, 1536, 384, 96, 24, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 394388, 492692, 517268, 523412, 524948, 525332, 525428, 0, 0, 0, 0, 0, 0, 0,
+                0,
+            ],
+            sizes: [
+                393216, 98304, 24576, 6144, 1536, 384, 96, 24, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -109,11 +130,15 @@ fn blp2_taurenfemaileskin00_001_extra() {
         width: 128,
         height: 128,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 25748, 31892, 33428, 33812, 33908, 33932, 33938, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [24576, 6144, 1536, 384, 96, 24, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 25748, 31892, 33428, 33812, 33908, 33932, 33938, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [24576, 6144, 1536, 384, 96, 24, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -132,11 +157,15 @@ fn blp2_buy() {
         width: 32,
         height: 32,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 3220, 3732, 3860, 3892, 3900, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [2048, 512, 128, 32, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 3220, 3732, 3860, 3892, 3900, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [2048, 512, 128, 32, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -155,11 +184,15 @@ fn blp2_trade_alchemy() {
         width: 64,
         height: 64,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 3220, 3732, 3860, 3892, 3900, 3908, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [2048, 512, 128, 32, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 3220, 3732, 3860, 3892, 3900, 3908, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [2048, 512, 128, 32, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -178,11 +211,15 @@ fn blp2_buyout_icon() {
         width: 16,
         height: 16,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 1300, 1332, 1340, 1348, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [128, 32, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 1300, 1332, 1340, 1348, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [128, 32, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -201,13 +238,16 @@ fn blp2_inv_fishingpole_02() {
         width: 64,
         height: 64,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 5268, 6292, 6548, 6612, 6628, 6644, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [4096, 1024, 256, 64, 16, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 5268, 6292, 6548, 6612, 6628, 6644, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [4096, 1024, 256, 64, 16, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
-
 
 #[test]
 fn blp2_ability_rogue_shadowstep() {
@@ -225,11 +265,15 @@ fn blp2_ability_rogue_shadowstep() {
         width: 64,
         height: 64,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 5268, 6292, 6548, 6612, 6628, 6644, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-            sizes: [4096, 1024, 256, 64, 16, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 5268, 6292, 6548, 6612, 6628, 6644, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            ],
+            sizes: [4096, 1024, 256, 64, 16, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
@@ -248,9 +292,16 @@ fn blp2_hell_fire_sky_nebula_03() {
         width: 512,
         height: 256,
         mipmap_locator: MipmapLocator::Internal {
-            offsets: [1172, 132244, 165012, 173204, 175252, 175764, 175892, 175924, 175940, 175956, 0, 0, 0, 0, 0, 0], 
-            sizes: [131072, 32768, 8192, 2048, 512, 128, 32, 16, 16, 16, 0, 0, 0, 0, 0, 0]
+            offsets: [
+                1172, 132244, 165012, 173204, 175252, 175764, 175892, 175924, 175940, 175956, 0, 0,
+                0, 0, 0, 0,
+            ],
+            sizes: [
+                131072, 32768, 8192, 2048, 512, 128, 32, 16, 16, 16, 0, 0, 0, 0, 0, 0,
+            ],
         },
     };
     assert_eq!(parsed.header, header);
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
 }

@@ -1,3 +1,4 @@
+use std::fmt;
 use std::str;
 
 /// Version of type format that determines structure of file. Encodes
@@ -22,7 +23,7 @@ impl BlpVersion {
         magic
     }
 
-    /// Convert from 4 ASCII symbols from the start of file to known 
+    /// Convert from 4 ASCII symbols from the start of file to known
     /// tag of version.
     pub fn from_magic(magic: [u8; 4]) -> Option<BlpVersion> {
         // Use that ascii is valid subset of utf8
@@ -32,7 +33,17 @@ impl BlpVersion {
             "BLP0" => Some(BlpVersion::Blp0),
             "BLP1" => Some(BlpVersion::Blp1),
             "BLP2" => Some(BlpVersion::Blp2),
-            _ => None
+            _ => None,
+        }
+    }
+}
+
+impl fmt::Display for BlpVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BlpVersion::Blp0 => write!(f, "BLP0"),
+            BlpVersion::Blp1 => write!(f, "BLP1"),
+            BlpVersion::Blp2 => write!(f, "BLP2"),
         }
     }
 }
@@ -45,19 +56,16 @@ mod tests {
     fn known_magics() {
         let magic1 = [0x42, 0x4c, 0x50, 0x31];
         let version1 = BlpVersion::from_magic(magic1);
-        
         assert_eq!(version1, Some(BlpVersion::Blp1));
         assert_eq!(version1.unwrap().to_magic(), magic1);
 
         let magic2 = [0x42, 0x4c, 0x50, 0x32];
         let version2 = BlpVersion::from_magic(magic2);
-        
         assert_eq!(version2, Some(BlpVersion::Blp2));
         assert_eq!(version2.unwrap().to_magic(), magic2);
 
         let magic3 = [0x42, 0x4c, 0x50, 0x30];
         let version3 = BlpVersion::from_magic(magic3);
-        
         assert_eq!(version3, Some(BlpVersion::Blp0));
         assert_eq!(version3.unwrap().to_magic(), magic3);
     }

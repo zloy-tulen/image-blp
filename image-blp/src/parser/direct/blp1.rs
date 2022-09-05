@@ -47,6 +47,7 @@ pub fn parse_raw1<'a>(
         Ok(())
     };
 
+    trace!("Mipmaps count: {}", blp_header.mipmaps_count());
     read_image(0)?;
     if blp_header.has_mipmaps() {
         for i in 1..(blp_header.mipmaps_count() + 1).min(16) {

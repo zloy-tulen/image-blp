@@ -31,7 +31,7 @@ where
 
     if blp_header.has_mipmaps() {
         // funny that there is no hard limit for number of mipmaps
-        for i in 1..blp_header.mipmaps_count() + 1 {
+        for i in 1..(blp_header.mipmaps_count() + 1).min(16) {
             read_mipmap(i)?;
         }
     }

@@ -1,4 +1,5 @@
 use super::super::*;
+use crate::encode::encode_blp0;
 use test_log::test;
 
 #[test]
@@ -38,4 +39,7 @@ fn blp0_test() {
     };
     assert_eq!(parsed.header, header);
     assert_eq!(parsed.get_content_jpeg().expect("jpeg").images.len(), 10);
+    let encoded = encode_blp0(&parsed).expect("encoded blp");
+    assert_eq!(encoded.blp_bytes, blp_bytes);
+    assert_eq!(encoded.blp_mipmaps, blp_mipmaps);
 }

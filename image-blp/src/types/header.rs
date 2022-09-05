@@ -56,12 +56,12 @@ pub struct BlpHeader {
 impl BlpHeader {
     /// Calculate needed count of mipmaps for the defined size
     pub fn mipmaps_count(&self) -> u32 {
-        let width_n = (self.width as f32).log2() as u32;
-        let height_n = (self.height as f32).log2() as u32;
-        if self.version == BlpVersion::Blp0 {
+        if self.has_mipmaps() {
+            let width_n = (self.width as f32).log2() as u32;
+            let height_n = (self.height as f32).log2() as u32;
             width_n.max(height_n)
         } else {
-            width_n.min(height_n)
+            0
         }
     }
 
@@ -212,7 +212,7 @@ mod tests {
             version: BlpVersion::Blp1,
             ..Default::default()
         };
-        assert_eq!(header.mipmaps_count(), 8);
+        assert_eq!(header.mipmaps_count(), 9);
 
         let header = BlpHeader {
             width: 1,

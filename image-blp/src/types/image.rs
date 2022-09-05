@@ -23,6 +23,21 @@ impl BlpImage {
     pub fn get_content_direct(&self) -> Option<&BlpDirect> {
         self.content.get_direct()
     }
+
+    /// If the image is DXT1 encoded, return the content
+    pub fn get_content_dxt1(&self) -> Option<&BlpDxt1> {
+        self.content.get_dxt1()
+    }
+
+    /// If the image is DXT3 encoded, return the content
+    pub fn get_content_dxt3(&self) -> Option<&BlpDxt3> {
+        self.content.get_dxt3()
+    }
+
+    /// If the image is DXT5 encoded, return the content
+    pub fn get_content_dxt5(&self) -> Option<&BlpDxt5> {
+        self.content.get_dxt5()
+    }
 }
 
 /// Collects all possible content types with actual data
