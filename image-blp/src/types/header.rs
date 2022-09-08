@@ -91,6 +91,14 @@ impl BlpHeader {
     pub fn alpha_bits(&self) -> u32 {
         self.flags.alpha_bits()
     }
+
+    /// Return offsets and sizes of internal mipmaps. For external returns [None]
+    pub fn internal_mipmaps(&self) -> Option<([u32; 16], [u32; 16])> {
+        match self.mipmap_locator {
+            MipmapLocator::Internal { offsets, sizes } => Some((offsets, sizes)),
+            MipmapLocator::External => None,
+        }
+    }
 }
 
 impl Default for BlpHeader {
@@ -151,8 +159,8 @@ pub enum BlpFlags {
     /// For version >= 2
     Blp2 {
         compression: Compression,
-        alpha_bits: u8,  // 0, 1, 7, or 8
-        alpha_type: u8,  // 0, 1, 7, or 8
+        alpha_bits: u8, // 0, 1, 7, or 8
+        alpha_type: u8, // 0, 1, 7, or 8
         has_mipmaps: u8,
     },
     /// For version < 2
@@ -185,7 +193,7 @@ impl BlpFlags {
     /// Get count of bits alpha channel is encoded in content
     pub fn alpha_bits(&self) -> u32 {
         match self {
-            BlpFlags::Blp2 { compression, .. } if *compression == Compression::Raw3  => 4,
+            BlpFlags::Blp2 { compression, .. } if *compression == Compression::Raw3 => 4,
             BlpFlags::Blp2 { alpha_bits, .. } => *alpha_bits as u32,
             BlpFlags::Old { alpha_bits, .. } => *alpha_bits,
         }
