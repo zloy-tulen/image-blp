@@ -7,7 +7,7 @@ use super::types::Parser;
 use crate::types::*;
 use blp0::parse_blp0;
 use blp1::parse_raw1;
-use blp2::{parse_dxt1, parse_dxt3, parse_dxt5};
+use blp2::{parse_dxt1, parse_dxt3, parse_dxt5, parse_raw3};
 use log::*;
 use nom::{error::context, multi::count, number::complete::le_u32, Err};
 
@@ -45,12 +45,12 @@ where
                             input,
                         )
                     })(input)?;
-                    Ok((input, BlpContent::Direct(BlpDirect { cmap, images })))
+                    Ok((input, BlpContent::Raw1(BlpRaw1 { cmap, images })))
                 }
                 Compression::Raw3 => {
                     let mut images = vec![];
                     let (input, _) = context("raw3 format", |input| {
-                        parse_raw1(
+                        parse_raw3(
                             // Actually the same at parsing level
                             blp_header,
                             original_input,
@@ -60,7 +60,7 @@ where
                             input,
                         )
                     })(input)?;
-                    Ok((input, BlpContent::Direct(BlpDirect { cmap, images })))
+                    Ok((input, BlpContent::Raw3(BlpRaw3 { cmap, images })))
                 }
                 Compression::Dxtc if alpha_type == 0 => {
                     let mut images = vec![];
@@ -128,7 +128,7 @@ where
                     input,
                 )?,
             };
-            Ok((input, BlpContent::Direct(BlpDirect { cmap, images })))
+            Ok((input, BlpContent::Raw1(BlpRaw1 { cmap, images })))
         }
     }
 }

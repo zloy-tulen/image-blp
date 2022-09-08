@@ -2,129 +2,8 @@ use super::super::*;
 use crate::encode::encode_blp;
 use test_log::test;
 
-// #[test]
-// fn blp1_simplest_direct_alpha() {
-//     let blp_bytes = include_bytes!("../../../../assets/blp1/simple_with_alpha.blp");
-//     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-//     let header = BlpHeader {
-//         version: BlpVersion::Blp1,
-//         content: BlpContentTag::Direct,
-//         flags: BlpFlags::Old {
-//             alpha_bits: 8,
-//             extra: 3,
-//             has_mipmaps: 5,
-//         },
-//         width: 2,
-//         height: 2,
-//         mipmap_locator: MipmapLocator::Internal {
-//             offsets: [1180; 16],
-//             sizes: [8; 16],
-//         },
-//     };
-//     assert_eq!(parsed.header, header);
-//     let encoded = encode_blp(&parsed).expect("encoded blp");
-//     assert_eq!(encoded, blp_bytes);
-// }
-
-// #[test]
-// fn blp1_simplest_direct_noalpha() {
-//     let blp_bytes = include_bytes!("../../../../assets/blp1/simple_without_alpha.blp");
-//     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-//     let header = BlpHeader {
-//         version: BlpVersion::Blp1,
-//         content: BlpContentTag::Direct,
-//         flags: BlpFlags::Old {
-//             alpha_bits: 0,
-//             extra: 5,
-//             has_mipmaps: 5,
-//         },
-//         width: 2,
-//         height: 2,
-//         mipmap_locator: MipmapLocator::Internal {
-//             offsets: [1180; 16],
-//             sizes: [4; 16],
-//         },
-//     };
-//     assert_eq!(parsed.header, header);
-//     let encoded = encode_blp(&parsed).expect("encoded blp");
-//     assert_eq!(encoded, blp_bytes);
-// }
-
-// #[test]
-// fn blp1_simplest_blp() {
-//     let blp_bytes = include_bytes!("../../../../assets/blp1/simple_jpg.blp");
-//     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-//     let header = BlpHeader {
-//         version: BlpVersion::Blp1,
-//         content: BlpContentTag::Jpeg,
-//         flags: BlpFlags::Old {
-//             alpha_bits: 8,
-//             extra: 3,
-//             has_mipmaps: 5,
-//         },
-//         width: 2,
-//         height: 2,
-//         mipmap_locator: MipmapLocator::Internal {
-//             offsets: [160; 16],
-//             sizes: [482; 16],
-//         },
-//     };
-//     assert_eq!(parsed.header, header);
-//     let encoded = encode_blp(&parsed).expect("encoded blp");
-//     assert_eq!(encoded, blp_bytes);
-// }
-
-// #[test]
-// fn blp1_rect_direct() {
-//     let blp_bytes = include_bytes!("../../../../assets/blp1/rect_with_alpha.blp");
-//     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-//     let header = BlpHeader {
-//         version: BlpVersion::Blp1,
-//         content: BlpContentTag::Direct,
-//         flags: BlpFlags::Old {
-//             alpha_bits: 8,
-//             extra: 3,
-//             has_mipmaps: 5,
-//         },
-//         width: 2,
-//         height: 3,
-//         mipmap_locator: MipmapLocator::Internal {
-//             offsets: [1180; 16],
-//             sizes: [12; 16],
-//         },
-//     };
-//     assert_eq!(parsed.header, header);
-//     let encoded = encode_blp(&parsed).expect("encoded blp");
-//     assert_eq!(encoded, blp_bytes);
-// }
-
-// #[test]
-// fn blp1_rect_jpg_no_alpha() {
-//     let blp_bytes = include_bytes!("../../../../assets/blp1/rect_without_alpha.blp");
-//     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
-//     let header = BlpHeader {
-//         version: BlpVersion::Blp1,
-//         content: BlpContentTag::Jpeg,
-//         flags: BlpFlags::Old {
-//             alpha_bits: 0,
-//             extra: 5,
-//             has_mipmaps: 5,
-//         },
-//         width: 2,
-//         height: 3,
-//         mipmap_locator: MipmapLocator::Internal {
-//             offsets: [160; 16],
-//             sizes: [448; 16],
-//         },
-//     };
-//     assert_eq!(parsed.header, header);
-//     assert_eq!(parsed.get_content_jpeg().expect("jpg").images.len(), 2);
-//     let encoded = encode_blp(&parsed).expect("encoded blp");
-//     assert_eq!(encoded, blp_bytes);
-// }
-
 #[test]
-fn blp1_cliff_brush01_blp_compression_uncompressed() {
+fn test_cliff_brush01_blp_compression_uncompressed() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/CliffBrush01-BlpCompressionUncompressed.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -143,13 +22,13 @@ fn blp1_cliff_brush01_blp_compression_uncompressed() {
         },
     };
     assert_eq!(parsed.header, header);
-    assert_eq!(parsed.get_content_direct().expect("image").images.len(), 1);
+    assert_eq!(parsed.get_content_raw1().expect("image").images.len(), 1);
     let encoded = encode_blp(&parsed).expect("encoded blp");
     assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
-fn blp1_day_indicator_texture3() {
+fn test_day_indicator_texture3() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/day-indicator-texture3.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -168,14 +47,14 @@ fn blp1_day_indicator_texture3() {
         },
     };
     assert_eq!(parsed.header, header);
-    assert_eq!(parsed.get_content_direct().expect("image").images.len(), 10);
+    assert_eq!(parsed.get_content_raw1().expect("image").images.len(), 10);
     let encoded = encode_blp(&parsed).expect("encoded blp");
     assert_eq!(encoded, blp_bytes);
 }
 
 
 #[test]
-fn blp1_editor_gem_deact() {
+fn test_editor_gem_deact() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/EditorGemDeact.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -194,13 +73,13 @@ fn blp1_editor_gem_deact() {
         },
     };
     assert_eq!(parsed.header, header);
-    assert_eq!(parsed.get_content_direct().expect("image").images.len(), 1);
+    assert_eq!(parsed.get_content_raw1().expect("image").images.len(), 1);
     let encoded = encode_blp(&parsed).expect("encoded blp");
     assert_eq!(encoded, blp_bytes);
 }
 
 #[test]
-fn blp1_green_firering2() {
+fn test_green_firering2() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/Green_Firering2.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -225,7 +104,7 @@ fn blp1_green_firering2() {
 }
 
 #[test]
-fn blp1_human_base() {
+fn test_human_base() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/HumanBase.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -250,7 +129,7 @@ fn blp1_human_base() {
 }
 
 #[test]
-fn blp1_minimap_item() {
+fn test_minimap_item() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/minimap-item.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -269,13 +148,13 @@ fn blp1_minimap_item() {
         },
     };
     assert_eq!(parsed.header, header);
-    assert_eq!(parsed.get_content_direct().expect("image").images.len(), 5);
+    assert_eq!(parsed.get_content_raw1().expect("image").images.len(), 5);
     let encoded = encode_blp(&parsed).expect("encoded blp");
     assert_eq!(encoded, blp_bytes, "Sizes: {} ?= {}", encoded.len(), blp_bytes.len());
 }
 
 #[test]
-fn blp1_night_elf_sybmol() {
+fn test_night_elf_sybmol() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/NightElfSymbol.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -300,7 +179,7 @@ fn blp1_night_elf_sybmol() {
 }
 
 #[test]
-fn blp1_object_editor_custom_item() {
+fn test_object_editor_custom_item() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/ObjectEditor-CustomItem.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -319,13 +198,13 @@ fn blp1_object_editor_custom_item() {
         },
     };
     assert_eq!(parsed.header, header);
-    assert_eq!(parsed.get_content_direct().expect("image").images.len(), 1);
+    assert_eq!(parsed.get_content_raw1().expect("image").images.len(), 1);
     let encoded = encode_blp(&parsed).expect("encoded blp");
     assert_eq!(encoded, blp_bytes, "Sizes: {} ?= {}", encoded.len(), blp_bytes.len());
 }
 
 #[test]
-fn blp1_ping2() {
+fn test_ping2() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/ping2.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -344,13 +223,13 @@ fn blp1_ping2() {
         },
     };
     assert_eq!(parsed.header, header);
-    assert_eq!(parsed.get_content_direct().expect("image").images.len(), 8);
+    assert_eq!(parsed.get_content_raw1().expect("image").images.len(), 8);
     let encoded = encode_blp(&parsed).expect("encoded blp");
     assert_eq!(encoded, blp_bytes, "Sizes: {} ?= {}", encoded.len(), blp_bytes.len());
 }
 
 #[test]
-fn blp1_stronghold() {
+fn test_stronghold() {
     let blp_bytes = include_bytes!("../../../../assets/blp1/Stronghold.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {

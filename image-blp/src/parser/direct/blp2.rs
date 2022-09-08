@@ -9,6 +9,63 @@ use nom::{
     Err,
 };
 
+pub fn parse_raw3<'a>(
+    blp_header: &BlpHeader,
+    original_input: &'a [u8],
+    offsets: &[u32],
+    sizes: &[u32],
+    images: &mut Vec<Raw3Image>,
+    input: &'a [u8],
+) -> Parser<'a, ()> {
+    let mut read_image = |i: u32| {
+        let offset = offsets[i as usize];
+        let size = sizes[i as usize];
+        if offset as usize >= original_input.len() {
+            error!(
+                "Offset of mipmap {} is out of bounds! {} >= {}",
+                i,
+                offset,
+                original_input.len()
+            );
+            return Err(Err::Failure(Error::<&[u8]>::OutOfBounds(0)));
+        }
+        if (offset + size) as usize > original_input.len() {
+            error!(
+                "Offset+size of mipmap {} is out of bounds! {} > {}",
+                i,
+                offset + size,
+                original_input.len()
+            );
+            return Err(Err::Failure(Error::OutOfBounds(0)));
+        }
+
+        trace!("Expecting size of image: {}", size);
+        let image_bytes = &original_input[offset as usize..(offset + size) as usize];
+        trace!("We have {} bytes", image_bytes.len());
+        let n = blp_header.mipmap_pixels(i);
+        trace!("For mipmap size {:?} we should fetch {} bytes", blp_header.mipmap_size(i), n*4);
+        let (_, pixels) = count(le_u32, n as usize)(image_bytes)?;
+
+        images.push(Raw3Image {
+            pixels,
+        });
+        Ok(())
+    };
+
+    trace!("Mipmaps count: {}", blp_header.mipmaps_count());
+    read_image(0)?;
+    if blp_header.has_mipmaps() {
+        for i in 1..(blp_header.mipmaps_count() + 1).min(16) {
+            if sizes[i as usize] == 0 {
+                trace!("Size of mipmap {} is 0 bytes, I stop reading of images", i);
+                break;
+            }
+            read_image(i)?;
+        }
+    }
+    Ok((input, ()))
+}
+
 pub fn parse_dxt1<'a>(
     blp_header: &BlpHeader,
     original_input: &'a [u8],

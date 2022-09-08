@@ -9,7 +9,7 @@ pub fn parse_raw1<'a>(
     original_input: &'a [u8],
     offsets: &[u32],
     sizes: &[u32],
-    images: &mut Vec<DirectImage>,
+    images: &mut Vec<Raw1Image>,
     input: &'a [u8],
 ) -> Parser<'a, ()> {
     let mut read_image = |i: u32| {
@@ -40,7 +40,7 @@ pub fn parse_raw1<'a>(
         let an = (n * blp_header.alpha_bits() + 7) / 8;
         let (_, indexed_alpha) = count(le_u8, an as usize)(input)?;
 
-        images.push(DirectImage {
+        images.push(Raw1Image {
             indexed_rgb,
             indexed_alpha,
         });

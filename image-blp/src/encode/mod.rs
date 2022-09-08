@@ -4,7 +4,7 @@ mod primitives;
 use super::types::*;
 use error::Error;
 use log::*;
-use primitives::push_le_u32;
+use primitives::{push_le_u16, push_le_u32, push_le_u64};
 use std::iter::{repeat, zip};
 
 /// BLP file bytes with vector of external mipmaps encoded
@@ -101,9 +101,8 @@ fn encode_content(
 ) -> Result<(), Error> {
     match content {
         BlpContent::Jpeg(jpeg_content) => encode_jpeg(header, jpeg_content, output, mipmaps),
-        BlpContent::Direct(direct_content) => {
-            encode_direct(header, direct_content, output, mipmaps)
-        }
+        BlpContent::Raw1(raw1_content) => encode_raw1(header, raw1_content, output, mipmaps),
+        BlpContent::Raw3(raw3_content) => encode_raw3(header, raw3_content, output, mipmaps),
         BlpContent::Dxt1(dxt1_content) => encode_dxt1(header, dxt1_content, output),
         BlpContent::Dxt3(dxt3_content) => encode_dxt3(header, dxt3_content, output),
         BlpContent::Dxt5(dxt5_content) => encode_dxt5(header, dxt5_content, output),
@@ -116,7 +115,7 @@ fn encode_jpeg(
     output: &mut Vec<u8>,
     mipmaps: &mut Vec<Vec<u8>>,
 ) -> Result<(), Error> {
-    // To produce identical files, reproducting bug that leads to leave 2 bytes 
+    // To produce identical files, reproducting bug that leads to leave 2 bytes
     // of header uncovered by length
     push_le_u32((content.header.len() - 2) as u32, output);
     output.extend(content.header.iter());
@@ -130,6 +129,7 @@ fn encode_jpeg(
         MipmapLocator::Internal { offsets, sizes } => {
             let mut pairs: Vec<(u32, u32)> = zip(offsets, sizes)
                 .take((header.mipmaps_count() + 1) as usize)
+                .filter(|(_, size)| *size > 0)
                 .collect();
             pairs.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).expect("number cmp"));
 
@@ -158,36 +158,44 @@ fn encode_jpeg(
     Ok(())
 }
 
-fn encode_direct(
+fn encode_raw<T, F>(
     header: &BlpHeader,
-    content: &BlpDirect,
+    cmap: &[u32],
+    images: &[T],
+    mut encoder: F, 
     output: &mut Vec<u8>,
     mipmaps: &mut Vec<Vec<u8>>,
-) -> Result<(), Error> {
-    for c in content.cmap.iter() {
+) -> Result<(), Error> 
+where 
+    F: FnMut(&T, &mut Vec<u8>)
+{
+    trace!("Header: {:?}", header);
+
+    for c in cmap.iter() {
         push_le_u32(*c, output);
     }
 
     match header.mipmap_locator {
         MipmapLocator::External => {
-            for image in content.images.iter() {
+            for image in images.iter() {
                 let mut image_bytes = vec![];
-                encode_direct_image(image, &mut image_bytes);
+                encoder(image, &mut image_bytes);
                 mipmaps.push(image_bytes);
             }
         }
         MipmapLocator::Internal { offsets, sizes } => {
             let mut pairs: Vec<(u32, u32)> = zip(offsets, sizes)
                 .take((header.mipmaps_count() + 1) as usize)
+                .filter(|(_, size)| *size > 0)
                 .collect();
             pairs.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).expect("number cmp"));
 
             trace!(
                 "Mipmaps ordered: {:?}, images count: {}",
                 pairs,
-                content.images.len()
+                images.len()
             );
-            for (i, ((offset, size), image)) in zip(pairs, content.images.iter()).enumerate() {
+            for (i, ((offset, size), image)) in zip(pairs, images.iter()).enumerate() {
                 trace!("Writing mipmap {}", i);
                 let padding = (if offset as usize >= output.len() {
                     Ok(offset as usize - output.len())
@@ -198,7 +206,7 @@ fn encode_direct(
                     output.extend(repeat(0).take(padding));
                 }
                 let mut image_bytes = vec![];
-                encode_direct_image(image, &mut image_bytes);
+                encoder(image, &mut image_bytes);
                 if image_bytes.len() != size as usize {
                     return Err(Error::InvalidMipmapSize(
                         i as u32,
@@ -213,21 +221,142 @@ fn encode_direct(
     Ok(())
 }
 
-fn encode_direct_image(image: &DirectImage, output: &mut Vec<u8>) {
+fn encode_raw1(
+    header: &BlpHeader,
+    content: &BlpRaw1,
+    output: &mut Vec<u8>,
+    mipmaps: &mut Vec<Vec<u8>>,
+) -> Result<(), Error> {
+    encode_raw(header, &content.cmap, &content.images, |image, output| encode_raw1_image(image, output), output, mipmaps)
+}
+
+fn encode_raw3(
+    header: &BlpHeader,
+    content: &BlpRaw3,
+    output: &mut Vec<u8>,
+    mipmaps: &mut Vec<Vec<u8>>,
+) -> Result<(), Error> {
+    encode_raw(header, &content.cmap, &content.images, |image, output| encode_raw3_image(image, output), output, mipmaps)
+}
+
+fn encode_raw1_image(image: &Raw1Image, output: &mut Vec<u8>) {
     output.extend(image.indexed_rgb.iter());
     output.extend(image.indexed_alpha.iter());
 }
 
+fn encode_raw3_image(image: &Raw3Image, output: &mut Vec<u8>) {
+    for pixel in image.pixels.iter() {
+        push_le_u32(*pixel, output);
+    }
+}
+
+fn encode_dxtn<F, T>(
+    header: &BlpHeader,
+    images: &[T],
+    mut writer: F,
+    output: &mut Vec<u8>,
+) -> Result<(), Error>
+where
+    F: FnMut(&T, &mut Vec<u8>),
+{
+    trace!("Header: {:?}", header);
+    let (offsets, sizes) = if let MipmapLocator::Internal { offsets, sizes } = header.mipmap_locator
+    {
+        (offsets, sizes)
+    } else {
+        return Err(Error::ExternalMipmapsNotSupported(BlpVersion::Blp2));
+    };
+
+    let mut pairs: Vec<(u32, u32)> = zip(offsets, sizes)
+        .take((header.mipmaps_count() + 1) as usize)
+        .filter(|(_, size)| *size > 0)
+        .collect();
+    pairs.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).expect("number cmp"));
+
+    trace!(
+        "Mipmaps ordered: {:?}, images count: {}",
+        pairs,
+        images.len()
+    );
+
+    for (i, ((offset, size), image)) in zip(pairs, images.iter()).enumerate() {
+        trace!("Writing mipmap {}", i);
+        let padding = (if offset as usize >= output.len() {
+            Ok(offset as usize - output.len())
+        } else {
+            Err(Error::InvalidOffset(i as u32, offset, output.len() as u32))
+        })?;
+        if padding > 0 {
+            output.extend(repeat(0).take(padding));
+        }
+        let mut image_bytes = vec![];
+        writer(image, &mut image_bytes);
+        if image_bytes.len() != size as usize {
+            return Err(Error::InvalidMipmapSize(
+                i as u32,
+                size,
+                image_bytes.len() as u32,
+            ));
+        }
+        output.extend(image_bytes);
+    }
+    Ok(())
+}
+
 fn encode_dxt1(header: &BlpHeader, content: &BlpDxt1, output: &mut Vec<u8>) -> Result<(), Error> {
-    unimplemented!();
+    encode_dxtn(
+        header,
+        &content.images,
+        |img, v| encode_dxt1_image(img, v),
+        output,
+    )
 }
 
 fn encode_dxt3(header: &BlpHeader, content: &BlpDxt3, output: &mut Vec<u8>) -> Result<(), Error> {
-    unimplemented!();
+    encode_dxtn(
+        header,
+        &content.images,
+        |img, v| encode_dxt3_image(img, v),
+        output,
+    )
 }
 
 fn encode_dxt5(header: &BlpHeader, content: &BlpDxt5, output: &mut Vec<u8>) -> Result<(), Error> {
-    unimplemented!();
+    encode_dxtn(
+        header,
+        &content.images,
+        |img, v| encode_dxt5_image(img, v),
+        output,
+    )
+}
+
+fn encode_dxt1_image(image: &Dxt1Image, output: &mut Vec<u8>) {
+    for block in image.blocks.iter() {
+        push_le_u16(block.color1, output);
+        push_le_u16(block.color2, output);
+        push_le_u32(block.color_indecies, output);
+    }
+}
+
+fn encode_dxt3_image(image: &Dxt3Image, output: &mut Vec<u8>) {
+    for block in image.blocks.iter() {
+        push_le_u16(block.color1, output);
+        push_le_u16(block.color2, output);
+        push_le_u32(block.color_indecies, output);
+        push_le_u64(block.alphas, output);
+    }
+}
+
+fn encode_dxt5_image(image: &Dxt5Image, output: &mut Vec<u8>) {
+    for block in image.blocks.iter() {
+        output.push(block.alpha1);
+        output.push(block.alpha2);
+        push_le_u32(block.alpha_indecies1, output);
+        push_le_u16(block.alpha_indecies2, output);
+        push_le_u16(block.color1, output);
+        push_le_u16(block.color2, output);
+        push_le_u32(block.color_indecies, output);
+    }
 }
 
 #[cfg(test)]

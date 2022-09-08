@@ -1,6 +1,6 @@
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlpDirect {
+pub struct BlpRaw1 {
     /// The cmap field array is the colour look up table used for an indexed
     /// colour model. Each element represents 24 bit RGB colour component values
     /// in the order of 0xBBGGRR. The final byte is alignment padding and will
@@ -9,11 +9,11 @@ pub struct BlpDirect {
     pub cmap: Vec<u32>,
     /// Image itself and all mipmaps levels. If there are no mipmaps,
     /// the length of the vector is 1.
-    pub images: Vec<DirectImage>,
+    pub images: Vec<Raw1Image>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct DirectImage {
+pub struct Raw1Image {
     /// BGR component values can be obtained by using indexedRGB values as an
     /// index in lutBGR. When producing such values using color matching be
     /// aware of the linear nature of the color space. For best results it is

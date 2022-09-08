@@ -219,7 +219,7 @@ mod tests {
             height: 4,
             ..Default::default()
         };
-        assert_eq!(header.mipmaps_count(), 0);
+        assert_eq!(header.mipmaps_count(), 2);
 
         let header = BlpHeader {
             width: 4,
@@ -233,6 +233,6 @@ mod tests {
             height: 128,
             ..Default::default()
         };
-        assert_eq!(header.mipmaps_count(), 7);
+        assert_eq!(header.mipmaps_count(), 9);
     }
 }

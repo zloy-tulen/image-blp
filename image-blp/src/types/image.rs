@@ -1,5 +1,4 @@
 use super::direct::*;
-use super::dxtn::*;
 use super::header::*;
 use super::jpeg::*;
 pub use super::version::BlpVersion;
@@ -14,14 +13,31 @@ pub struct BlpImage {
 }
 
 impl BlpImage {
+    /// Get total amount of images encoded in the content
+    pub fn get_image_count(&self) -> usize {
+        match &self.content {
+            BlpContent::Dxt1(v) => v.images.len(),
+            BlpContent::Dxt3(v) => v.images.len(),
+            BlpContent::Dxt5(v) => v.images.len(),
+            BlpContent::Raw1(v) => v.images.len(),
+            BlpContent::Raw3(v) => v.images.len(),
+            BlpContent::Jpeg(v) => v.images.len(),
+        }
+    }
+
     /// If the image is encoded jpeg, return the content
     pub fn get_content_jpeg(&self) -> Option<&BlpJpeg> {
         self.content.get_jpeg()
     }
 
-    /// If the image is direct encoded, return the content
-    pub fn get_content_direct(&self) -> Option<&BlpDirect> {
-        self.content.get_direct()
+    /// If the image is direct encoded with BLP1 format, return the content
+    pub fn get_content_raw1(&self) -> Option<&BlpRaw1> {
+        self.content.get_raw1()
+    }
+
+    /// If the image is direct encoded with raw3 BLP2 format, return the content
+    pub fn get_content_raw3(&self) -> Option<&BlpRaw3> {
+        self.content.get_raw3()
     }
 
     /// If the image is DXT1 encoded, return the content
@@ -45,7 +61,9 @@ impl BlpImage {
 pub enum BlpContent {
     Jpeg(BlpJpeg),
     /// Used with direct type for BLP0/BLP1 and raw compression in BLP2
-    Direct(BlpDirect),
+    Raw1(BlpRaw1),
+    /// Used with direct type for BLP2, encodes RGBA bitmap.
+    Raw3(BlpRaw3),
     /// BLP2 DXT1 compression (no alpha)
     Dxt1(BlpDxt1),
     /// BLP2 DXT3 compression (with alpha)
@@ -58,7 +76,8 @@ impl BlpContent {
     pub fn tag(&self) -> BlpContentTag {
         match self {
             BlpContent::Jpeg { .. } => BlpContentTag::Jpeg,
-            BlpContent::Direct { .. } => BlpContentTag::Direct,
+            BlpContent::Raw1 { .. } => BlpContentTag::Direct,
+            BlpContent::Raw3 { .. } => BlpContentTag::Direct,
             BlpContent::Dxt1 { .. } => BlpContentTag::Direct,
             BlpContent::Dxt3 { .. } => BlpContentTag::Direct,
             BlpContent::Dxt5 { .. } => BlpContentTag::Direct,
@@ -72,9 +91,16 @@ impl BlpContent {
         }
     }
 
-    pub fn get_direct(&self) -> Option<&BlpDirect> {
+    pub fn get_raw1(&self) -> Option<&BlpRaw1> {
         match self {
-            BlpContent::Direct(v) => Some(v),
+            BlpContent::Raw1(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn get_raw3(&self) -> Option<&BlpRaw3> {
+        match self {
+            BlpContent::Raw3(v) => Some(v),
             _ => None,
         }
     }

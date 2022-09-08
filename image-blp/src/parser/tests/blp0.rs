@@ -2,8 +2,26 @@ use super::super::*;
 use crate::encode::encode_blp0;
 use test_log::test;
 
+fn test_blp0(blp_bytes: &[u8], blp_mipmaps: &[Vec<u8>], expected_header: &BlpHeader, expected_images: usize) {
+    let (_, parsed) = parse_blp_with_externals(blp_bytes, |i| {
+        if (i as usize) < blp_mipmaps.len() {
+            Ok(Some(&blp_mipmaps[i as usize]))
+        } else {
+            Ok(None)
+        }
+    })
+    .expect("successfull parsing");
+    assert_eq!(&parsed.header, expected_header);
+    assert_eq!(parsed.get_image_count(), expected_images);
+    let encoded = encode_blp0(&parsed).expect("encoded blp");
+    // There are zeros in the original file at the end
+    let blp_bytes_n: Vec<u8> =  blp_bytes.iter().take(encoded.blp_bytes.len()).copied().collect();
+    assert_eq!(encoded.blp_bytes, blp_bytes_n);
+    assert_eq!(encoded.blp_mipmaps, blp_mipmaps);
+}
+
 #[test]
-fn blp0_test() {
+fn test_wyvern_rider() {
     let blp_bytes = include_bytes!("../../../../assets/blp0/WyvernRider.blp");
     let blp_mipmaps = vec![
         include_bytes!("../../../../assets/blp0/WyvernRider.b00").to_vec(),
@@ -17,14 +35,6 @@ fn blp0_test() {
         include_bytes!("../../../../assets/blp0/WyvernRider.b08").to_vec(),
         include_bytes!("../../../../assets/blp0/WyvernRider.b09").to_vec(),
     ];
-    let (_, parsed) = parse_blp_with_externals(blp_bytes, |i| {
-        if (i as usize) < blp_mipmaps.len() {
-            Ok(Some(&blp_mipmaps[i as usize]))
-        } else {
-            Ok(None)
-        }
-    })
-    .expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp0,
         content: BlpContentTag::Jpeg,
@@ -37,9 +47,59 @@ fn blp0_test() {
         height: 256,
         mipmap_locator: MipmapLocator::External,
     };
-    assert_eq!(parsed.header, header);
-    assert_eq!(parsed.get_content_jpeg().expect("jpeg").images.len(), 10);
-    let encoded = encode_blp0(&parsed).expect("encoded blp");
-    assert_eq!(encoded.blp_bytes, blp_bytes);
-    assert_eq!(encoded.blp_mipmaps, blp_mipmaps);
+    test_blp0(blp_bytes, &blp_mipmaps, &header, blp_mipmaps.len());
+}
+
+#[test]
+fn test_hero_level_border() {
+    let blp_bytes = include_bytes!("../../../../assets/blp0/HeroLevel-Border.blp");
+    let blp_mipmaps = vec![
+        include_bytes!("../../../../assets/blp0/HeroLevel-Border.b00").to_vec(),
+        include_bytes!("../../../../assets/blp0/HeroLevel-Border.b01").to_vec(),
+        include_bytes!("../../../../assets/blp0/HeroLevel-Border.b02").to_vec(),
+        include_bytes!("../../../../assets/blp0/HeroLevel-Border.b03").to_vec(),
+        include_bytes!("../../../../assets/blp0/HeroLevel-Border.b04").to_vec(),
+        include_bytes!("../../../../assets/blp0/HeroLevel-Border.b05").to_vec(),
+        include_bytes!("../../../../assets/blp0/HeroLevel-Border.b06").to_vec(),
+    ];
+    let header = BlpHeader {
+        version: BlpVersion::Blp0,
+        content: BlpContentTag::Direct,
+        flags: BlpFlags::Old {
+            alpha_bits: 0,
+            extra: 5,
+            has_mipmaps: 1,
+        },
+        width: 64,
+        height: 64,
+        mipmap_locator: MipmapLocator::External,
+    };
+    test_blp0(blp_bytes, &blp_mipmaps, &header, blp_mipmaps.len());
+}
+
+#[test]
+fn test_acid_splash1() {
+    let blp_bytes = include_bytes!("../../../../assets/blp0/AcidSplash1.blp");
+    let blp_mipmaps = vec![
+        include_bytes!("../../../../assets/blp0/AcidSplash1.b00").to_vec(),
+        include_bytes!("../../../../assets/blp0/AcidSplash1.b01").to_vec(),
+        include_bytes!("../../../../assets/blp0/AcidSplash1.b02").to_vec(),
+        include_bytes!("../../../../assets/blp0/AcidSplash1.b03").to_vec(),
+        include_bytes!("../../../../assets/blp0/AcidSplash1.b04").to_vec(),
+        include_bytes!("../../../../assets/blp0/AcidSplash1.b05").to_vec(),
+        include_bytes!("../../../../assets/blp0/AcidSplash1.b06").to_vec(),
+    ];
+    let header = BlpHeader {
+        version: BlpVersion::Blp0,
+        content: BlpContentTag::Jpeg,
+        flags: BlpFlags::Old {
+            alpha_bits: 8,
+            extra: 4,
+            has_mipmaps: 1,
+        },
+        width: 64,
+        height: 64,
+        mipmap_locator: MipmapLocator::External,
+    };
+    test_blp0(blp_bytes, &blp_mipmaps, &header, blp_mipmaps.len());
 }

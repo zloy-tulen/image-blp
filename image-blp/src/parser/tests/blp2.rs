@@ -3,7 +3,7 @@ use crate::encode::encode_blp;
 use test_log::test;
 
 #[test]
-fn blp2_attack() {
+fn test_attack() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Attack.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -30,7 +30,7 @@ fn blp2_attack() {
 }
 
 #[test]
-fn blp2_ui_paid_character_customization() {
+fn test_ui_paid_character_customization() {
     let blp_bytes =
         include_bytes!("../../../../assets/blp2/UI-PAIDCHARACTERCUSTOMIZATION-BUTTON.BLP");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
@@ -60,7 +60,7 @@ fn blp2_ui_paid_character_customization() {
 }
 
 #[test]
-fn blp2_sun_glare() {
+fn test_sun_glare() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/SunGlare.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -85,7 +85,7 @@ fn blp2_sun_glare() {
 }
 
 #[test]
-fn blp2_oilslickenv_a() {
+fn test_oilslickenv_a() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/oilslickenvA.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -115,7 +115,7 @@ fn blp2_oilslickenv_a() {
 }
 
 #[test]
-fn blp2_taurenfemaileskin00_001_extra() {
+fn test_taurenfemaileskin00_001_extra() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/TAURENFEMALESKIN00_01_EXTRA.BLP");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -142,7 +142,7 @@ fn blp2_taurenfemaileskin00_001_extra() {
 }
 
 #[test]
-fn blp2_buy() {
+fn test_buy() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Buy.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -169,7 +169,7 @@ fn blp2_buy() {
 }
 
 #[test]
-fn blp2_trade_alchemy() {
+fn test_trade_alchemy() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Trade_Alchemy.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -196,7 +196,7 @@ fn blp2_trade_alchemy() {
 }
 
 #[test]
-fn blp2_buyout_icon() {
+fn test_buyout_icon() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/BuyoutIcon.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -223,7 +223,7 @@ fn blp2_buyout_icon() {
 }
 
 #[test]
-fn blp2_inv_fishingpole_02() {
+fn test_inv_fishingpole_02() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/INV_Fishingpole_02.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -250,7 +250,7 @@ fn blp2_inv_fishingpole_02() {
 }
 
 #[test]
-fn blp2_ability_rogue_shadowstep() {
+fn test_ability_rogue_shadowstep() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Ability_Rogue_Shadowstep.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
@@ -277,7 +277,7 @@ fn blp2_ability_rogue_shadowstep() {
 }
 
 #[test]
-fn blp2_hell_fire_sky_nebula_03() {
+fn test_hell_fire_sky_nebula_03() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/HellFireSkyNebula03.blp");
     let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
