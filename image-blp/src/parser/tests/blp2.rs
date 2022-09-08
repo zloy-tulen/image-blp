@@ -2,10 +2,34 @@ use super::super::*;
 use crate::encode::encode_blp;
 use test_log::test;
 
+fn blp2_test(name: &str, blp_bytes: &[u8], header: &BlpHeader) {
+    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
+    assert_eq!(&parsed.header, header);
+    let expected_mipmaps = header
+        .internal_mipmaps()
+        .map(|(offsets, _)| offsets.iter().filter(|a| **a > 0).count())
+        .unwrap_or(0);
+    assert_eq!(
+        parsed.get_image_count(),
+        expected_mipmaps
+    );
+    let encoded = encode_blp(&parsed).expect("encoded blp");
+    assert_eq!(encoded, blp_bytes);
+    // Test File API
+    {
+        let dir = tempfile::tempdir().expect("temporary directory");
+        let blp_name = format!("{}.blp", name);
+        let blp_path = dir.path().join(Path::new(&blp_name));
+        std::fs::write(&blp_path, blp_bytes).expect("write");
+
+        let loaded = load_blp(&blp_path).expect("loaded");
+        assert_eq!(loaded, parsed);
+    }
+}
+
 #[test]
 fn test_attack() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Attack.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -24,16 +48,13 @@ fn test_attack() {
             sizes: [1152, 288, 72, 18, 5, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("Attack", blp_bytes, &header);
 }
 
 #[test]
 fn test_ui_paid_character_customization() {
     let blp_bytes =
         include_bytes!("../../../../assets/blp2/UI-PAIDCHARACTERCUSTOMIZATION-BUTTON.BLP");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -54,15 +75,12 @@ fn test_ui_paid_character_customization() {
             ],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("UI-PAIDCHARACTERCUSTOMIZATION-BUTTON", blp_bytes, &header);
 }
 
 #[test]
 fn test_sun_glare() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/SunGlare.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -79,15 +97,12 @@ fn test_sun_glare() {
             sizes: [262144, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("SunGlare", blp_bytes, &header);
 }
 
 #[test]
 fn test_oilslickenv_a() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/oilslickenvA.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -109,15 +124,12 @@ fn test_oilslickenv_a() {
             ],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("oilslickenvA", blp_bytes, &header);
 }
 
 #[test]
 fn test_taurenfemaileskin00_001_extra() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/TAURENFEMALESKIN00_01_EXTRA.BLP");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -136,15 +148,12 @@ fn test_taurenfemaileskin00_001_extra() {
             sizes: [24576, 6144, 1536, 384, 96, 24, 6, 2, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("TAURENFEMALESKIN00_01_EXTRA", blp_bytes, &header);
 }
 
 #[test]
 fn test_buy() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Buy.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -163,15 +172,12 @@ fn test_buy() {
             sizes: [2048, 512, 128, 32, 8, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("Buy", blp_bytes, &header);
 }
 
 #[test]
 fn test_trade_alchemy() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Trade_Alchemy.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -190,15 +196,12 @@ fn test_trade_alchemy() {
             sizes: [2048, 512, 128, 32, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("Trade_Alchemy", blp_bytes, &header);
 }
 
 #[test]
 fn test_buyout_icon() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/BuyoutIcon.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -217,15 +220,12 @@ fn test_buyout_icon() {
             sizes: [128, 32, 8, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("BuyoutIcon", blp_bytes, &header);
 }
 
 #[test]
 fn test_inv_fishingpole_02() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/INV_Fishingpole_02.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -244,15 +244,12 @@ fn test_inv_fishingpole_02() {
             sizes: [4096, 1024, 256, 64, 16, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("INV_Fishingpole_02", blp_bytes, &header);
 }
 
 #[test]
 fn test_ability_rogue_shadowstep() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/Ability_Rogue_Shadowstep.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -271,15 +268,12 @@ fn test_ability_rogue_shadowstep() {
             sizes: [4096, 1024, 256, 64, 16, 16, 16, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("Ability_Rogue_Shadowstep", blp_bytes, &header);
 }
 
 #[test]
 fn test_hell_fire_sky_nebula_03() {
     let blp_bytes = include_bytes!("../../../../assets/blp2/HellFireSkyNebula03.blp");
-    let (_, parsed) = parse_blp(blp_bytes).expect("successfull parsing");
     let header = BlpHeader {
         version: BlpVersion::Blp2,
         content: BlpContentTag::Direct,
@@ -301,7 +295,5 @@ fn test_hell_fire_sky_nebula_03() {
             ],
         },
     };
-    assert_eq!(parsed.header, header);
-    let encoded = encode_blp(&parsed).expect("encoded blp");
-    assert_eq!(encoded, blp_bytes);
+    blp2_test("HellFireSkyNebula03", blp_bytes, &header);
 }
