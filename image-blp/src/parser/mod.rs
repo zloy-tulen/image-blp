@@ -8,12 +8,39 @@ pub mod types;
 mod tests;
 
 use super::types::*;
+use crate::path::make_mipmap_path;
 use direct::parse_direct_content;
-pub use error::Error;
+pub use error::{Error, LoadError};
 use header::parse_header;
 use jpeg::parse_jpeg_content;
 use nom::error::context;
+use std::path::Path;
 use types::Parser;
+
+/// Read BLP file from file system. If it BLP0 format, uses the mipmaps near the root file.
+pub fn load_blp(path: &Path) -> Result<BlpImage, LoadError> {
+    let input = std::fs::read(path).map_err(|e| LoadError::FileSystem(path.to_owned(), e))?;
+    // We have to preload all mipmaps in memory as we are constrained with Nom 'a lifetime that 
+    // should be equal of lifetime of root input stream. 
+    let mut mipmaps = vec![];
+    for i in 0 .. 16 {
+        let mipmap_path = make_mipmap_path(path, i).ok_or_else(|| LoadError::InvalidFilename(path.to_owned()))?;
+        if mipmap_path.is_file() {
+            let mipmap = std::fs::read(mipmap_path).map_err(|e| LoadError::FileSystem(path.to_owned(), e))?;
+            mipmaps.push(mipmap);
+        } else {
+            break;
+        }
+    } 
+
+    let image = match parse_blp_with_externals(&input, |i| preloaded_mipmaps(&mipmaps, i)) {
+        Ok((_, image)) => Ok(image),
+        Err(nom::Err::Incomplete(needed)) => Err(LoadError::Incomplete(needed)),
+        Err(nom::Err::Error(e)) => Err(LoadError::Parsing(format!("{}", e))),
+        Err(nom::Err::Failure(e)) => Err(LoadError::Parsing(format!("{}", e))),
+    }?;
+    Ok(image)
+}
 
 /// Parse BLP file from slice and fail if we require parse external files (case BLP0)
 pub fn parse_blp(input: &[u8]) -> Parser<BlpImage> {
@@ -23,6 +50,19 @@ pub fn parse_blp(input: &[u8]) -> Parser<BlpImage> {
 /// Helper for `parse_blp` when no external mipmaps are needed
 pub fn no_mipmaps<'a>(_: u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> {
     Ok(None)
+}
+
+/// Helper for `parse_blp` when external mipmaps are located in filesystem near the
+/// root file and loaded in memory when reading the main file. 
+pub fn preloaded_mipmaps<'a>(
+    mipmaps: &'a [Vec<u8>],
+    i: u32,
+) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> {
+    if i as usize >= mipmaps.len() {
+        Ok(None) 
+    } else {
+        Ok(Some(&mipmaps[i as usize]))
+    }
 }
 
 /// Parse BLP file from slice and use user provided callback to read mipmaps

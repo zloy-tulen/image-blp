@@ -2,15 +2,35 @@ pub mod error;
 mod primitives;
 
 use super::types::*;
+use crate::path::make_mipmap_path;
 use error::Error;
 use log::*;
 use primitives::{push_le_u16, push_le_u32, push_le_u64};
 use std::iter::{repeat, zip};
+use std::path::Path;
 
 /// BLP file bytes with vector of external mipmaps encoded
 pub struct BlpWithMipmaps {
     pub blp_bytes: Vec<u8>,
     pub blp_mipmaps: Vec<Vec<u8>>,
+}
+
+/// Save given BLP image to given path. For BLP0 it will create mipmap
+pub fn save_blp(image: &BlpImage, path: &Path) -> Result<(), Error> {
+    let BlpWithMipmaps {
+        blp_bytes,
+        blp_mipmaps,
+    } = encode_blp_with_external(image)?;
+    std::fs::write(path, blp_bytes).map_err(|e| Error::FileSystem(path.to_owned(), e))?;
+    if !blp_mipmaps.is_empty() {
+        for (i, image) in blp_mipmaps.iter().enumerate() {
+            let mipmap_path =
+                make_mipmap_path(path, i).ok_or_else(|| Error::FileNameInvalid(path.to_owned()))?;
+            std::fs::write(&mipmap_path, image)
+                .map_err(|e| Error::FileSystem(mipmap_path.to_owned(), e))?;
+        }
+    }
+    Ok(())
 }
 
 /// Encode BLP0 with external mipmaps
@@ -162,12 +182,12 @@ fn encode_raw<T, F>(
     header: &BlpHeader,
     cmap: &[u32],
     images: &[T],
-    mut encoder: F, 
+    mut encoder: F,
     output: &mut Vec<u8>,
     mipmaps: &mut Vec<Vec<u8>>,
-) -> Result<(), Error> 
-where 
-    F: FnMut(&T, &mut Vec<u8>)
+) -> Result<(), Error>
+where
+    F: FnMut(&T, &mut Vec<u8>),
 {
     trace!("Header: {:?}", header);
 
@@ -227,7 +247,14 @@ fn encode_raw1(
     output: &mut Vec<u8>,
     mipmaps: &mut Vec<Vec<u8>>,
 ) -> Result<(), Error> {
-    encode_raw(header, &content.cmap, &content.images, |image, output| encode_raw1_image(image, output), output, mipmaps)
+    encode_raw(
+        header,
+        &content.cmap,
+        &content.images,
+        |image, output| encode_raw1_image(image, output),
+        output,
+        mipmaps,
+    )
 }
 
 fn encode_raw3(
@@ -236,7 +263,14 @@ fn encode_raw3(
     output: &mut Vec<u8>,
     mipmaps: &mut Vec<Vec<u8>>,
 ) -> Result<(), Error> {
-    encode_raw(header, &content.cmap, &content.images, |image, output| encode_raw3_image(image, output), output, mipmaps)
+    encode_raw(
+        header,
+        &content.cmap,
+        &content.images,
+        |image, output| encode_raw3_image(image, output),
+        output,
+        mipmaps,
+    )
 }
 
 fn encode_raw1_image(image: &Raw1Image, output: &mut Vec<u8>) {
