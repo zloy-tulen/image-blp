@@ -48,6 +48,28 @@ impl fmt::Display for BlpVersion {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UnknownBlpVersion(String);
+
+impl fmt::Display for UnknownBlpVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Unknown BLP version: {}", self.0)
+    }
+}
+
+impl std::str::FromStr for BlpVersion {
+    type Err = UnknownBlpVersion;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_lowercase().as_ref() {
+            "blp0" => Ok(BlpVersion::Blp0),
+            "blp1" => Ok(BlpVersion::Blp1),
+            "blp2" => Ok(BlpVersion::Blp2),
+            _ => Err(UnknownBlpVersion(s.to_owned())),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

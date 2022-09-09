@@ -7,7 +7,7 @@ pub mod version;
 
 pub use direct::*;
 pub use header::*;
-pub use image::*;
+pub use self::image::*;
 pub use jpeg::*;
 pub use locator::*;
 pub use version::*;

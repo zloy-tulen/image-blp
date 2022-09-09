@@ -77,11 +77,11 @@ fn encode_header(header: &BlpHeader, output: &mut Vec<u8>) -> Result<(), Error> 
         }
     }
 
-    if header.width > 65535 {
+    if header.width > BLP_MAX_WIDTH {
         return Err(Error::WidthTooHigh(header.width));
     }
     push_le_u32(header.width, output);
-    if header.height > 65535 {
+    if header.height > BLP_MAX_HEIGHT {
         return Err(Error::WidthTooHigh(header.height));
     }
     push_le_u32(header.height, output);

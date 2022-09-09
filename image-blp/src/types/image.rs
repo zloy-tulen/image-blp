@@ -3,6 +3,13 @@ use super::header::*;
 use super::jpeg::*;
 pub use super::version::BlpVersion;
 
+/// Maximum width that BLP image can have due limitation 
+/// of mipmaping storage.
+pub const BLP_MAX_WIDTH: u32 = 65535;
+/// Maximum height that BLP image can have due limitation 
+/// of mipmaping storage.
+pub const BLP_MAX_HEIGHT: u32 = 65535;
+
 /// Parsed information from BLP file. The structure of the type
 /// strictly follows how the file is stored on the disk for
 /// easy encoding/decoding and further transformations.

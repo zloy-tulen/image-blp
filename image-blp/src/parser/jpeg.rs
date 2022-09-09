@@ -1,5 +1,6 @@
 use super::error::Error;
 use super::types::Parser;
+use crate::types::jpeg::MAX_JPEG_HEADER;
 use crate::types::*;
 use log::*;
 use nom::{
@@ -18,8 +19,14 @@ where
     F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
 {
     let (input, header_size) = le_u32(input)?;
-    // There is two additional bytes that are not covered by the header size 
-    let (input, header) = count(le_u8, (header_size+2) as usize)(input)?;
+    if header_size as usize > MAX_JPEG_HEADER {
+        warn!(
+            "JPEG header size {} is greater than {}, that might cause crashes of some tools.",
+            header_size, MAX_JPEG_HEADER,
+        );
+    }
+    // There is two additional bytes that are not covered by the header size
+    let (input, header) = count(le_u8, (header_size + 2) as usize)(input)?;
     let mut images = vec![];
 
     match blp_header.mipmap_locator {
