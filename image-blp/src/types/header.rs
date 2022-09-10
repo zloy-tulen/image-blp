@@ -55,10 +55,10 @@ pub struct BlpHeader {
 
 impl BlpHeader {
     /// Calculate needed count of mipmaps for the defined size
-    pub fn mipmaps_count(&self) -> u32 {
+    pub fn mipmaps_count(&self) -> usize {
         if self.has_mipmaps() {
-            let width_n = (self.width as f32).log2() as u32;
-            let height_n = (self.height as f32).log2() as u32;
+            let width_n = (self.width as f32).log2() as usize;
+            let height_n = (self.height as f32).log2() as usize;
             width_n.max(height_n)
         } else {
             0
@@ -72,7 +72,7 @@ impl BlpHeader {
 
     /// Return expected size of mipmap for the given mipmap level.
     /// 0 level means original image.
-    pub fn mipmap_size(&self, i: u32) -> (u32, u32) {
+    pub fn mipmap_size(&self, i: usize) -> (u32, u32) {
         if i == 0 {
             (self.width, self.height)
         } else {
@@ -82,7 +82,7 @@ impl BlpHeader {
 
     /// Return expected count of pixels in mipmap at the level i.
     /// 0 level means original image.
-    pub fn mipmap_pixels(&self, i: u32) -> u32 {
+    pub fn mipmap_pixels(&self, i: usize) -> u32 {
         let (w, h) = self.mipmap_size(i);
         w * h
     }

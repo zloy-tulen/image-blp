@@ -1,3 +1,7 @@
+use crate::types::{
+    header::{BlpHeader, BlpVersion},
+    locator::MipmapLocator,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BlpRaw1 {
@@ -10,6 +14,22 @@ pub struct BlpRaw1 {
     /// Image itself and all mipmaps levels. If there are no mipmaps,
     /// the length of the vector is 1.
     pub images: Vec<Raw1Image>,
+}
+
+impl BlpRaw1 {
+    /// Predict internal locator to write down mipmaps
+    pub fn mipmap_locator(&self, version: BlpVersion) -> MipmapLocator {
+        let mut offsets = [0; 16];
+        let mut sizes = [0; 16];
+        let mut cur_offset = BlpHeader::size(version) + self.cmap.len() * 4;
+        for (i, image) in self.images.iter().take(16).enumerate() {
+            offsets[i] = cur_offset as u32;
+            sizes[i] = image.len() as u32;
+            cur_offset += image.len();
+        }
+
+        MipmapLocator::Internal { offsets, sizes }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,4 +58,11 @@ pub struct Raw1Image {
     /// ALPHA_1B -> 87654321
     /// ```
     pub indexed_alpha: Vec<u8>,
+}
+
+impl Raw1Image {
+    /// Get size in bytes of serialized image
+    pub fn len(&self) -> usize {
+        self.indexed_rgb.len() + self.indexed_alpha.len()
+    }
 }

@@ -12,9 +12,9 @@ pub fn parse_raw1<'a>(
     images: &mut Vec<Raw1Image>,
     input: &'a [u8],
 ) -> Parser<'a, ()> {
-    let mut read_image = |i: u32| {
-        let offset = offsets[i as usize];
-        let size = sizes[i as usize];
+    let mut read_image = |i: usize| {
+        let offset = offsets[i];
+        let size = sizes[i];
         if offset as usize >= original_input.len() {
             error!(
                 "Offset of mipmap {} is out of bounds! {} >= {}",

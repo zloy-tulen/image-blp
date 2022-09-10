@@ -10,7 +10,7 @@ pub fn parse_blp0<'a, F>(
     input: &'a [u8],
 ) -> Parser<'a, ()>
 where
-    F: FnMut(u32) -> Result<Option<&'a[u8]>, Box<dyn std::error::Error>>,
+    F: FnMut(usize) -> Result<Option<&'a[u8]>, Box<dyn std::error::Error>>,
 {
     let mut read_mipmap = |i| {
         let image_bytes_opt =
@@ -33,7 +33,7 @@ where
 
 fn parse_raw1_image<'a>(
     blp_header: &BlpHeader,
-    mimpmap_number: u32,
+    mimpmap_number: usize,
     input: &'a [u8],
 ) -> Parser<'a, Raw1Image> {
     let n = blp_header.mipmap_pixels(mimpmap_number);

@@ -48,7 +48,7 @@ pub fn parse_blp(input: &[u8]) -> Parser<BlpImage> {
 }
 
 /// Helper for `parse_blp` when no external mipmaps are needed
-pub fn no_mipmaps<'a>(_: u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> {
+pub fn no_mipmaps<'a>(_: usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> {
     Ok(None)
 }
 
@@ -56,12 +56,12 @@ pub fn no_mipmaps<'a>(_: u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Er
 /// root file and loaded in memory when reading the main file. 
 pub fn preloaded_mipmaps<'a>(
     mipmaps: &'a [Vec<u8>],
-    i: u32,
+    i: usize,
 ) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> {
-    if i as usize >= mipmaps.len() {
+    if i >= mipmaps.len() {
         Ok(None) 
     } else {
-        Ok(Some(&mipmaps[i as usize]))
+        Ok(Some(&mipmaps[i]))
     }
 }
 
@@ -71,7 +71,7 @@ pub fn parse_blp_with_externals<'a, F>(
     external_mipmaps: F,
 ) -> Parser<'a, BlpImage>
 where
-    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> + Clone,
+    F: FnMut(usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> + Clone,
 {
     // Parse header
     let (input, header) = context("header", parse_header)(root_input)?;
@@ -91,7 +91,7 @@ fn parse_content<'a, F>(
     input: &'a [u8],
 ) -> Parser<'a, BlpContent>
 where
-    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> + Clone,
+    F: FnMut(usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> + Clone,
 {
     match blp_header.content {
         BlpContentTag::Jpeg => {

@@ -18,7 +18,7 @@ pub fn parse_direct_content<'a, F>(
     input: &'a [u8],
 ) -> Parser<'a, BlpContent>
 where
-    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
+    F: FnMut(usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
 {
     let (input, cmap) = context("color palette", count(le_u32, 256))(input)?;
 

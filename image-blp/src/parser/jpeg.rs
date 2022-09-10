@@ -16,7 +16,7 @@ pub fn parse_jpeg_content<'a, F>(
     input: &'a [u8],
 ) -> Parser<'a, BlpJpeg>
 where
-    F: FnMut(u32) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
+    F: FnMut(usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
 {
     let (input, header_size) = le_u32(input)?;
     if header_size as usize > MAX_JPEG_HEADER {
@@ -50,9 +50,9 @@ where
             }
         }
         MipmapLocator::Internal { offsets, sizes } => {
-            let mut read_image = |i: u32| {
-                let offset = offsets[i as usize];
-                let size = sizes[i as usize];
+            let mut read_image = |i: usize| {
+                let offset = offsets[i];
+                let size = sizes[i];
                 if offset as usize >= original_input.len() {
                     error!(
                         "Offset of mipmap {} is out of bounds! {} >= {}",

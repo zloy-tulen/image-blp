@@ -11,7 +11,7 @@ use std::io::Cursor;
 pub fn jpeg_to_image(image: &BlpJpeg, mipmap_level: usize) -> Result<DynamicImage, Error> {
     let raw_jpeg = image
         .get_full_jpeg(mipmap_level)
-        .ok_or(Error::MissingRootImage)?;
+        .ok_or(Error::MissingImage(mipmap_level))?;
     let jpeg = ImageReader::with_format(Cursor::new(raw_jpeg), ImageFormat::Jpeg).decode()?;
     let mut rgba = jpeg.into_rgba8();
     switch_red_blue(&mut rgba);
@@ -38,7 +38,13 @@ pub fn image_to_jpeg(
     }
 
     let mut images: Vec<Vec<u8>> = if make_mipmaps {
-        generate_mipmaps(DynamicImage::ImageRgba8(rgba), mipmap_filter)?
+        let images = generate_mipmaps(DynamicImage::ImageRgba8(rgba), mipmap_filter)?;
+        let jpeg_images: Result<Vec<Vec<u8>>, Error> = images.into_iter().map(|image| {
+            let mut image_bytes = vec![];
+            image.write_to(&mut Cursor::new(&mut image_bytes), ImageFormat::Jpeg)?;
+            Ok(image_bytes)
+        }).collect();
+        jpeg_images?
     } else {
         let mut root_img = vec![];
         rgba.write_to(&mut Cursor::new(&mut root_img), ImageFormat::Jpeg)?;

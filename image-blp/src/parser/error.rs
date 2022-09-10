@@ -21,11 +21,11 @@ pub enum Error<I: fmt::Debug> {
     #[error("Unexpected magic value {0}. The file format is not BLP or not supported.")]
     WrongMagic(String),
     #[error("Failed to extract external mipmap number {0} with error {1}")]
-    ExternalMipmap(u32, Box<dyn std::error::Error>),
+    ExternalMipmap(usize, Box<dyn std::error::Error>),
     #[error("There is no body of image for BLP0 mipmap number {0}")]
-    MissingImage(u32),
+    MissingImage(usize),
     #[error("Part of image exceeds bounds of file for mipmap number {0}")]
-    OutOfBounds(u32),
+    OutOfBounds(usize),
     #[error("BLP2 doesn't support external mipmaps")]
     Blp2NoExternalMips,
     #[error("Library doesn't support compression tag: {0}")]
