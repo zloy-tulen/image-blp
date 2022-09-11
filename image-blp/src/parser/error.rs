@@ -32,6 +32,8 @@ pub enum Error<I: fmt::Debug> {
     Blp2UnknownCompression(u8),
     #[error("Library doesn't support alpha type: {0}")]
     Blp2UnknownAlphaType(u8),
+    #[error("Impossible branch, JPEG compression but direct content type")]
+    Blp2UnexpectedJpegCompression,
     #[error("Error {1:?} at: {0:?}")]
     Nom(I, ErrorKind),
     #[error("Context: {0}. Error: {1}")]

@@ -228,7 +228,7 @@ struct Args {
     no_mipmaps: bool,
 
     /// Which algorithm to use to scale mipmaps down.
-    #[clap(long, value_parser, default_value = "gaussian")]
+    #[clap(long, value_parser, default_value = "lanczos3")]
     mipmap_filter: MipmapFilter,
 }
 

@@ -18,7 +18,7 @@ use raw3::*;
 pub fn blp_to_image(image: &BlpImage, mipmap_level: usize) -> Result<DynamicImage, Error> {
     match &image.content {
         BlpContent::Raw1(content) => raw1_to_image(&image.header, content, mipmap_level),
-        BlpContent::Raw3(content) => raw3_to_image(content, mipmap_level),
+        BlpContent::Raw3(content) => raw3_to_image(&image.header, content, mipmap_level),
         BlpContent::Jpeg(content) => jpeg_to_image(content, mipmap_level),
         BlpContent::Dxt1(content) => dxt1_to_image(content, mipmap_level),
         BlpContent::Dxt3(content) => dxt3_to_image(content, mipmap_level),
@@ -49,6 +49,17 @@ pub enum AlphaBits {
 
 impl From<AlphaBits> for u32 {
     fn from(value: AlphaBits) -> u32 {
+        match value {
+            AlphaBits::NoAlpha => 0,
+            AlphaBits::Bit1 => 1,
+            AlphaBits::Bit4 => 4,
+            AlphaBits::Bit8 => 8,
+        }
+    }
+}
+
+impl From<AlphaBits> for u8 {
+    fn from(value: AlphaBits) -> u8 {
         match value {
             AlphaBits::NoAlpha => 0,
             AlphaBits::Bit1 => 1,
@@ -176,9 +187,10 @@ pub fn image_to_blp(
                 let header = BlpHeader {
                     version: BlpVersion::Blp2,
                     content: BlpContentTag::Direct,
-                    flags: BlpFlags::Old {
+                    flags: BlpFlags::Blp2 {
+                        compression: Compression::Raw1,
                         alpha_bits: alpha_bits.into(),
-                        extra: 4,
+                        alpha_type: 0,
                         has_mipmaps: if make_mipmaps { 1 } else { 0 },
                     },
                     width,
@@ -190,7 +202,27 @@ pub fn image_to_blp(
                     content: BlpContent::Raw1(blp_raw1),
                 })
             }
-            Blp2Format::Raw3 => unimplemented!("raw3 blp2"),
+            Blp2Format::Raw3 => {
+                let width = image.width();
+                let height = image.height();
+                let blp_raw3 = image_to_raw3(image, make_mipmaps, mipmap_filter)?;
+                Ok(BlpImage {
+                    header: BlpHeader {
+                        version: BlpVersion::Blp2,
+                        content: BlpContentTag::Direct,
+                        flags: BlpFlags::Blp2 {
+                            compression: Compression::Raw3,
+                            alpha_bits: 8,
+                            alpha_type: 0,
+                            has_mipmaps: if make_mipmaps { 1 } else { 0 },
+                        },
+                        width,
+                        height,
+                        mipmap_locator: blp_raw3.mipmap_locator(BlpVersion::Blp2),
+                    },
+                    content: BlpContent::Raw3(blp_raw3),
+                })
+            }
             Blp2Format::Jpeg { has_alpha } => {
                 let alpha_bits = if has_alpha { 8 } else { 0 };
                 let blp_jpeg = image_to_jpeg(&image, make_mipmaps, alpha_bits, mipmap_filter)?;
@@ -198,9 +230,10 @@ pub fn image_to_blp(
                     header: BlpHeader {
                         version: BlpVersion::Blp2,
                         content: BlpContentTag::Jpeg,
-                        flags: BlpFlags::Old {
-                            alpha_bits: alpha_bits as u32,
-                            extra: 5,
+                        flags: BlpFlags::Blp2 {
+                            compression: Compression::Jpeg,
+                            alpha_bits: 8,
+                            alpha_type: 0,
                             has_mipmaps: if make_mipmaps { 1 } else { 0 },
                         },
                         width: image.width(),

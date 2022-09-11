@@ -33,6 +33,11 @@ where
                 Err(Err::Failure(Error::<&[u8]>::Blp2NoExternalMips))
             }
             MipmapLocator::Internal { offsets, sizes } => match compression {
+                Compression::Jpeg => {
+                    // Should not go there as we process JPEG on content tag branching
+                    // Although, BLP2 never uses JPEG, that branch is for totality of the code.
+                    return Err(Err::Failure(Error::Blp2UnexpectedJpegCompression));
+                }
                 Compression::Raw1 => {
                     let mut images = vec![];
                     let (input, _) = context("raw1 format", |input| {

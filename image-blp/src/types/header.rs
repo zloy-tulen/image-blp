@@ -127,6 +127,7 @@ impl Default for BlpHeader {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Compression {
+    Jpeg, // adhoc compression, never met in BLP2
     Raw1,
     Raw3,
     Dxtc,
@@ -146,6 +147,7 @@ impl TryFrom<u8> for Compression {
 
     fn try_from(val: u8) -> Result<Compression, Self::Error> {
         match val {
+            0 => Ok(Compression::Jpeg),
             1 => Ok(Compression::Raw1),
             2 => Ok(Compression::Dxtc),
             3 => Ok(Compression::Raw3),
@@ -157,6 +159,7 @@ impl TryFrom<u8> for Compression {
 impl From<Compression> for u8 {
     fn from(val: Compression) -> u8 {
         match val {
+            Compression::Jpeg => 0,
             Compression::Raw1 => 1,
             Compression::Dxtc => 2,
             Compression::Raw3 => 3,
