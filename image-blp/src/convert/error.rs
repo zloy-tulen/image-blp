@@ -23,12 +23,6 @@ pub enum Error {
     Raw1InvalidAlphaBits(u32),
     #[error("Color map length {0}, 256 expected!")]
     ColorMapLengthInvalid(usize),
-    #[error("Failed to generate palette: {0}")]
-    PaletteGeneration(#[from] rscolorq::QuantError),
-    #[error("Failed to convert buffer for quantized palette!")]
-    PaletteConvertFail,
-    #[error("Could not retrieve color from palette")]
-    PaletteWrongColor,
     #[error("Expected palette of 255 colors, but got {0}")]
     PaletteWrongSize(usize),
 }

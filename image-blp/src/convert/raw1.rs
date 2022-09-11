@@ -3,7 +3,6 @@ use super::mipmap::generate_mipmaps;
 use super::palette::*;
 use crate::types::*;
 use ::image::{imageops::FilterType, DynamicImage, RgbImage, RgbaImage};
-use log::*;
 
 pub fn raw1_to_image(
     header: &BlpHeader,
@@ -133,120 +132,36 @@ pub fn image_to_raw1(
     } else {
         vec![image].into_iter()
     };
-    if alpha_bits == 0 {
-        let mut images = vec![];
-        // Create quantized image from the first image.
-        let root_image = raw_images.next().ok_or(Error::MissingImage(0))?;
-        let (root_quantized, cmap) = quantize_rgb(root_image.into_rgb8())?;
-        if cmap.len() != 255 {
-            return Err(Error::PaletteWrongSize(cmap.len()));
-        }
-        images.push(Raw1Image {
-            indexed_rgb: root_quantized,
-            indexed_alpha: vec![],
-        });
 
-        // Quantize mipmaps
-        for image in raw_images {
-            let quantized = quantize_rgb_known(image.into_rgb8(), &cmap)?;
-            images.push(Raw1Image {
-                indexed_rgb: quantized,
-                indexed_alpha: vec![],
-            });
-        }
+    let mut images = vec![];
 
-        Ok(BlpRaw1 { cmap, images })
-    } else if alpha_bits == 1 {
-        let mut images = vec![];
-        // Create quantized image from the first image.
-        let root_image = raw_images
-            .next()
-            .ok_or(Error::MissingImage(0))?
-            .into_rgba8();
-        let indexed_alpha = index_alpha_1bit(&root_image);
-        let (root_quantized, cmap) = quantize_rgba(root_image)?;
-        if cmap.len() != 255 {
-            return Err(Error::PaletteWrongSize(cmap.len()));
-        }
-        images.push(Raw1Image {
-            indexed_rgb: root_quantized,
-            indexed_alpha,
-        });
-
-        // Quantize mipmaps
-        for image in raw_images {
-            let rgba = image.into_rgba8();
-            let indexed_alpha = index_alpha_1bit(&rgba);
-            let quantized = quantize_rgba_known(rgba, &cmap)?;
-            images.push(Raw1Image {
-                indexed_rgb: quantized,
-                indexed_alpha,
-            });
-        }
-
-        Ok(BlpRaw1 { cmap, images })
-    } else if alpha_bits == 4 {
-        let mut images = vec![];
-        // Create quantized image from the first image.
-        let root_image = raw_images
-            .next()
-            .ok_or(Error::MissingImage(0))?
-            .into_rgba8();
-        let indexed_alpha = index_alpha_4bit(&root_image);
-        let (root_quantized, cmap) = quantize_rgba(root_image)?;
-        if cmap.len() != 255 {
-            return Err(Error::PaletteWrongSize(cmap.len()));
-        }
-        images.push(Raw1Image {
-            indexed_rgb: root_quantized,
-            indexed_alpha,
-        });
-
-        // Quantize mipmaps
-        for image in raw_images {
-            let rgba = image.into_rgba8();
-            let indexed_alpha = index_alpha_4bit(&rgba);
-            let quantized = quantize_rgba_known(rgba, &cmap)?;
-            images.push(Raw1Image {
-                indexed_rgb: quantized,
-                indexed_alpha,
-            });
-        }
-
-        Ok(BlpRaw1 { cmap, images })
-    } else if alpha_bits == 8 {
-        let mut images = vec![];
-        trace!("Create quantized image from the first image.");
-        let root_image = raw_images
-            .next()
-            .ok_or(Error::MissingImage(0))?
-            .into_rgba8();
-        let indexed_alpha = index_alpha_8bit(&root_image);
-        let (root_quantized, cmap) = quantize_rgba(root_image)?;
-        if cmap.len() != 255 {
-            return Err(Error::PaletteWrongSize(cmap.len()));
-        }
-        images.push(Raw1Image {
-            indexed_rgb: root_quantized,
-            indexed_alpha,
-        });
-
-        trace!("Quantize mipmaps");
-        for (i, image) in raw_images.enumerate() {
-            trace!("Processing mipmap {}", i);
-            let rgba = image.into_rgba8();
-            let indexed_alpha = index_alpha_8bit(&rgba);
-            let quantized = quantize_rgba_known(rgba, &cmap)?;
-            images.push(Raw1Image {
-                indexed_rgb: quantized,
-                indexed_alpha,
-            });
-        }
-
-        Ok(BlpRaw1 { cmap, images })
-    } else {
-        return Err(Error::Raw1InvalidAlphaBits(alpha_bits));
+    // Create quantized image from the first image.
+    let root_image = raw_images
+        .next()
+        .ok_or(Error::MissingImage(0))?
+        .into_rgba8();
+    let indexed_alpha = index_alpha(&root_image, alpha_bits)?;
+    let (root_quantized, cmap, nq) = quantize_rgba(root_image)?;
+    if cmap.len() != 255 {
+        return Err(Error::PaletteWrongSize(cmap.len()));
     }
+    images.push(Raw1Image {
+        indexed_rgb: root_quantized,
+        indexed_alpha,
+    });
+
+    // Quantize mipmaps
+    for image in raw_images {
+        let rgba = image.into_rgba8();
+        let indexed_alpha = index_alpha(&rgba, alpha_bits)?;
+        let quantized = quantize_rgba_known(rgba, &nq)?;
+        images.push(Raw1Image {
+            indexed_rgb: quantized,
+            indexed_alpha,
+        });
+    }
+
+    Ok(BlpRaw1 { cmap, images })
 }
 
 fn index_alpha_1bit(image: &RgbaImage) -> Vec<u8> {
@@ -301,4 +216,18 @@ fn index_alpha_8bit(image: &RgbaImage) -> Vec<u8> {
         res.push(pixel[3]);
     }
     res
+}
+
+fn index_alpha(image: &RgbaImage, alpha_bits: u32) -> Result<Vec<u8>, Error> {
+    if alpha_bits == 0 {
+        Ok(vec![])
+    } else if alpha_bits == 1 {
+        Ok(index_alpha_1bit(&image))
+    } else if alpha_bits == 4 {
+        Ok(index_alpha_4bit(&image))
+    } else if alpha_bits == 8 {
+        Ok(index_alpha_8bit(&image))
+    } else {
+        return Err(Error::Raw1InvalidAlphaBits(alpha_bits));
+    }
 }
