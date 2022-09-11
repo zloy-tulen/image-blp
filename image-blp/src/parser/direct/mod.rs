@@ -7,7 +7,7 @@ use super::types::Parser;
 use crate::types::*;
 use blp0::parse_blp0;
 use blp1::parse_raw1;
-use blp2::{parse_dxt1, parse_dxt3, parse_dxt5, parse_raw3};
+use blp2::{parse_dxtn, parse_raw3};
 use log::*;
 use nom::{error::context, multi::count, number::complete::le_u32, Err};
 
@@ -68,10 +68,12 @@ where
                     Ok((input, BlpContent::Raw3(BlpRaw3 { cmap, images })))
                 }
                 Compression::Dxtc if alpha_type == 0 => {
+                    let format = DxtnFormat::Dxt1;
                     let mut images = vec![];
                     let (input, _) = context("dxt1 format", |input| {
-                        parse_dxt1(
+                        parse_dxtn(
                             blp_header,
+                            format,
                             original_input,
                             &offsets,
                             &sizes,
@@ -79,13 +81,15 @@ where
                             input,
                         )
                     })(input)?;
-                    Ok((input, BlpContent::Dxt1(BlpDxt1 { images })))
+                    Ok((input, BlpContent::Dxt1(BlpDxtn { format, cmap, images })))
                 }
                 Compression::Dxtc if alpha_type == 1 => {
+                    let format = DxtnFormat::Dxt3;
                     let mut images = vec![];
                     let (input, _) = context("dxt3 format", |input| {
-                        parse_dxt3(
+                        parse_dxtn(
                             blp_header,
+                            format,
                             original_input,
                             &offsets,
                             &sizes,
@@ -94,13 +98,15 @@ where
                         )
                     })(input)?;
 
-                    Ok((input, BlpContent::Dxt3(BlpDxt3 { images })))
+                    Ok((input, BlpContent::Dxt3(BlpDxtn { format, cmap, images })))
                 }
                 Compression::Dxtc if alpha_type == 7 => {
+                    let format = DxtnFormat::Dxt5;
                     let mut images = vec![];
                     let (input, _) = context("dxt5 format", |input| {
-                        parse_dxt5(
+                        parse_dxtn(
                             blp_header,
+                            format,
                             original_input,
                             &offsets,
                             &sizes,
@@ -108,7 +114,7 @@ where
                             input,
                         )
                     })(input)?;
-                    Ok((input, BlpContent::Dxt5(BlpDxt5 { images })))
+                    Ok((input, BlpContent::Dxt5(BlpDxtn { format, cmap, images })))
                 }
                 Compression::Dxtc => {
                     error!("Alpha type {} is not supported for BLP2!", alpha_type);

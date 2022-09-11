@@ -180,6 +180,26 @@ impl From<MipmapFilter> for FilterType {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, ValueEnum)]
+pub enum DxtAlgorithmCli {
+    /// Range fit, fast, poor quality
+    Fastest,
+    /// Cluster algorithm, slow, good quality
+    Medium,
+    /// Iterative cluster algorithm, very slow, great quality
+    Finest,
+}
+
+impl From<DxtAlgorithmCli> for DxtAlgorithm {
+    fn from(value: DxtAlgorithmCli) -> DxtAlgorithm {
+        match value {
+            DxtAlgorithmCli::Fastest => DxtAlgorithm::RangeFit,
+            DxtAlgorithmCli::Medium => DxtAlgorithm::ClusterFit,
+            DxtAlgorithmCli::Finest => DxtAlgorithm::IterativeClusterFit,
+        }
+    }
+}
+
 /// Conversion of Warcraft III BLP format
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -215,7 +235,7 @@ struct Args {
 
     /// Which amount of alpha bits to use when encoding to BLP. Note that not all
     /// combination with formats are legit. Jpeg supports only 0 and 8 bits.
-    /// Raw1 supports 0, 1, 4, 8 bits. Raw3 is always 8 bits.
+    /// Raw1 supports 0, 1, 4, 8 bits. Raw3 is always 8 bits. Dxt1 supports 0, 1 bits.
     #[clap(long, default_value = "8")]
     alpha_bits: u8,
 
@@ -230,6 +250,13 @@ struct Args {
     /// Which algorithm to use to scale mipmaps down.
     #[clap(long, value_parser, default_value = "lanczos3")]
     mipmap_filter: MipmapFilter,
+
+    /// Defines algorithm to use when compressing to BLP DXTn type.
+    /// Fastest algorithm has poor quality. Medium is slow, but produces
+    /// good results. And there also finest that is very slow, but with
+    /// the greatest quality.
+    #[clap(long, value_parser, default_value = "medium")]
+    dxt_compression: DxtAlgorithmCli,
 }
 
 fn make_target_blp_format(args: &Args) -> Result<BlpTarget, Error> {
@@ -332,9 +359,57 @@ fn make_target_blp_format(args: &Args) -> Result<BlpTarget, Error> {
                 };
                 Ok(BlpTarget::Blp2(Blp2Format::Jpeg { has_alpha }))
             }
-            OutputBlpFormat::Dxt1 => Ok(BlpTarget::Blp2(Blp2Format::Dxt1)),
-            OutputBlpFormat::Dxt3 => Ok(BlpTarget::Blp2(Blp2Format::Dxt3)),
-            OutputBlpFormat::Dxt5 => Ok(BlpTarget::Blp2(Blp2Format::Dxt5)),
+            OutputBlpFormat::Dxt1 => {
+                let has_alpha = match args.alpha_bits {
+                    0 => false,
+                    1 => true,
+                    _ => {
+                        return Err(Error::InvalidAlphaBits(
+                            args.blp_version,
+                            args.blp_format,
+                            args.alpha_bits,
+                        ))
+                    }
+                };
+                Ok(BlpTarget::Blp2(Blp2Format::Dxt1 {
+                    has_alpha,
+                    compress_algorithm: args.dxt_compression.into(),
+                }))
+            }
+            OutputBlpFormat::Dxt3 => {
+                let has_alpha = match args.alpha_bits {
+                    0 => false,
+                    8 => true,
+                    _ => {
+                        return Err(Error::InvalidAlphaBits(
+                            args.blp_version,
+                            args.blp_format,
+                            args.alpha_bits,
+                        ))
+                    }
+                };
+                Ok(BlpTarget::Blp2(Blp2Format::Dxt3 {
+                    has_alpha,
+                    compress_algorithm: args.dxt_compression.into(),
+                }))
+            }
+            OutputBlpFormat::Dxt5 => {
+                let has_alpha = match args.alpha_bits {
+                    0 => false,
+                    8 => true,
+                    _ => {
+                        return Err(Error::InvalidAlphaBits(
+                            args.blp_version,
+                            args.blp_format,
+                            args.alpha_bits,
+                        ))
+                    }
+                };
+                Ok(BlpTarget::Blp2(Blp2Format::Dxt5 {
+                    has_alpha,
+                    compress_algorithm: args.dxt_compression.into(),
+                }))
+            }
         },
     }
 }

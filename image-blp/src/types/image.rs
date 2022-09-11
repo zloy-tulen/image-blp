@@ -48,17 +48,17 @@ impl BlpImage {
     }
 
     /// If the image is DXT1 encoded, return the content
-    pub fn get_content_dxt1(&self) -> Option<&BlpDxt1> {
+    pub fn get_content_dxt1(&self) -> Option<&BlpDxtn> {
         self.content.get_dxt1()
     }
 
     /// If the image is DXT3 encoded, return the content
-    pub fn get_content_dxt3(&self) -> Option<&BlpDxt3> {
+    pub fn get_content_dxt3(&self) -> Option<&BlpDxtn> {
         self.content.get_dxt3()
     }
 
     /// If the image is DXT5 encoded, return the content
-    pub fn get_content_dxt5(&self) -> Option<&BlpDxt5> {
+    pub fn get_content_dxt5(&self) -> Option<&BlpDxtn> {
         self.content.get_dxt5()
     }
 }
@@ -72,11 +72,11 @@ pub enum BlpContent {
     /// Used with direct type for BLP2, encodes RGBA bitmap.
     Raw3(BlpRaw3),
     /// BLP2 DXT1 compression (no alpha)
-    Dxt1(BlpDxt1),
+    Dxt1(BlpDxtn),
     /// BLP2 DXT3 compression (with alpha)
-    Dxt3(BlpDxt3),
+    Dxt3(BlpDxtn),
     /// BLP2 DXT5 compression (with alpha)
-    Dxt5(BlpDxt5),
+    Dxt5(BlpDxtn),
 }
 
 impl BlpContent {
@@ -112,21 +112,21 @@ impl BlpContent {
         }
     }
 
-    pub fn get_dxt1(&self) -> Option<&BlpDxt1> {
+    pub fn get_dxt1(&self) -> Option<&BlpDxtn> {
         match self {
             BlpContent::Dxt1(v) => Some(v),
             _ => None,
         }
     }
 
-    pub fn get_dxt3(&self) -> Option<&BlpDxt3> {
+    pub fn get_dxt3(&self) -> Option<&BlpDxtn> {
         match self {
             BlpContent::Dxt3(v) => Some(v),
             _ => None,
         }
     }
 
-    pub fn get_dxt5(&self) -> Option<&BlpDxt5> {
+    pub fn get_dxt5(&self) -> Option<&BlpDxtn> {
         match self {
             BlpContent::Dxt5(v) => Some(v),
             _ => None,

@@ -11,6 +11,7 @@ log = "0.4.17"
 nom = "7.1.1"
 color_quant = "1.1.0"
 thiserror = "1.0.33"
+texpresso = { version = "2.0.1", features = ["rayon"] }
 
 [dev-dependencies]
 env_logger = "0.9.0"

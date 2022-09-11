@@ -5,7 +5,7 @@ use super::types::*;
 use crate::path::make_mipmap_path;
 use error::Error;
 use log::*;
-use primitives::{push_le_u16, push_le_u32, push_le_u64};
+use primitives::push_le_u32;
 use std::iter::{repeat, zip};
 use std::path::Path;
 
@@ -123,9 +123,9 @@ fn encode_content(
         BlpContent::Jpeg(jpeg_content) => encode_jpeg(header, jpeg_content, output, mipmaps),
         BlpContent::Raw1(raw1_content) => encode_raw1(header, raw1_content, output, mipmaps),
         BlpContent::Raw3(raw3_content) => encode_raw3(header, raw3_content, output, mipmaps),
-        BlpContent::Dxt1(dxt1_content) => encode_dxt1(header, dxt1_content, output),
-        BlpContent::Dxt3(dxt3_content) => encode_dxt3(header, dxt3_content, output),
-        BlpContent::Dxt5(dxt5_content) => encode_dxt5(header, dxt5_content, output),
+        BlpContent::Dxt1(dxt1_content) => encode_dxtn(header, &dxt1_content.images, output),
+        BlpContent::Dxt3(dxt3_content) => encode_dxtn(header, &dxt3_content.images, output),
+        BlpContent::Dxt5(dxt5_content) => encode_dxtn(header, &dxt5_content.images, output),
     }
 }
 
@@ -284,15 +284,11 @@ fn encode_raw3_image(image: &Raw3Image, output: &mut Vec<u8>) {
     }
 }
 
-fn encode_dxtn<F, T>(
+fn encode_dxtn(
     header: &BlpHeader,
-    images: &[T],
-    mut writer: F,
+    images: &[DxtnImage],
     output: &mut Vec<u8>,
-) -> Result<(), Error>
-where
-    F: FnMut(&T, &mut Vec<u8>),
-{
+) -> Result<(), Error> {
     trace!("Header: {:?}", header);
     let (offsets, sizes) = if let MipmapLocator::Internal { offsets, sizes } = header.mipmap_locator
     {
@@ -323,74 +319,16 @@ where
         if padding > 0 {
             output.extend(repeat(0).take(padding));
         }
-        let mut image_bytes = vec![];
-        writer(image, &mut image_bytes);
-        if image_bytes.len() != size as usize {
+        if image.content.len() != size as usize {
             return Err(Error::InvalidMipmapSize(
                 i as u32,
                 size,
-                image_bytes.len() as u32,
+                image.content.len() as u32,
             ));
         }
-        output.extend(image_bytes);
+        output.extend(&image.content);
     }
     Ok(())
-}
-
-fn encode_dxt1(header: &BlpHeader, content: &BlpDxt1, output: &mut Vec<u8>) -> Result<(), Error> {
-    encode_dxtn(
-        header,
-        &content.images,
-        encode_dxt1_image,
-        output,
-    )
-}
-
-fn encode_dxt3(header: &BlpHeader, content: &BlpDxt3, output: &mut Vec<u8>) -> Result<(), Error> {
-    encode_dxtn(
-        header,
-        &content.images,
-        encode_dxt3_image,
-        output,
-    )
-}
-
-fn encode_dxt5(header: &BlpHeader, content: &BlpDxt5, output: &mut Vec<u8>) -> Result<(), Error> {
-    encode_dxtn(
-        header,
-        &content.images,
-        encode_dxt5_image,
-        output,
-    )
-}
-
-fn encode_dxt1_image(image: &Dxt1Image, output: &mut Vec<u8>) {
-    for block in image.blocks.iter() {
-        push_le_u16(block.color1, output);
-        push_le_u16(block.color2, output);
-        push_le_u32(block.color_indecies, output);
-    }
-}
-
-fn encode_dxt3_image(image: &Dxt3Image, output: &mut Vec<u8>) {
-    for block in image.blocks.iter() {
-        push_le_u16(block.color1, output);
-        push_le_u16(block.color2, output);
-        push_le_u32(block.color_indecies, output);
-        push_le_u64(block.alphas, output);
-    }
-}
-
-fn encode_dxt5_image(image: &Dxt5Image, output: &mut Vec<u8>) {
-    for block in image.blocks.iter() {
-        output.push(block.alpha1);
-        output.push(block.alpha2);
-        push_le_u32(block.alpha_indecies1, output);
-        push_le_u16(block.alpha_indecies2, output);
-        push_le_u16(block.color1, output);
-        push_le_u16(block.color2, output);
-        push_le_u32(block.color_indecies, output);
-    }
 }
 
 #[cfg(test)]

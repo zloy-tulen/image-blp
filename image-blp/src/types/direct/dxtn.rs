@@ -1,98 +1,68 @@
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlpDxt1 {
-    pub images: Vec<Dxt1Image>,
+use super::super::{locator::MipmapLocator, header::{BlpVersion, BlpHeader}};
+
+/// Which compression algorithm is used to compress the image 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DxtnFormat {
+    Dxt1,
+    Dxt3,
+    Dxt5,
+}
+
+impl From<DxtnFormat> for texpresso::Format {
+    fn from(v: DxtnFormat) -> texpresso::Format {
+        match v {
+            DxtnFormat::Dxt1 => texpresso::Format::Bc1,
+            DxtnFormat::Dxt3 => texpresso::Format::Bc2,
+            DxtnFormat::Dxt5 => texpresso::Format::Bc3,
+        }
+    }
+}
+
+impl DxtnFormat {
+    pub fn block_size(&self) -> usize {
+        match self {
+            DxtnFormat::Dxt1 => 8,
+            DxtnFormat::Dxt3 => 16,
+            DxtnFormat::Dxt5 => 16,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dxt1Image {
-    pub blocks: Vec<Dxt1Block>,
+pub struct BlpDxtn {
+    pub format: DxtnFormat,
+    pub cmap: Vec<u32>,
+    pub images: Vec<DxtnImage>,
 }
 
-/// Each block is 64 bits and begins with two 16 bit values, and are used to
-/// derived a 4 color palette.
-///
-/// The values are interpreted as 565 RGB colors, with the least significant
-/// bits corresponding to blue, to create the first two colors in the
-/// palette.
-///
-/// If the first value is less than or equal to the second, the final entry
-/// of the palette is reserved. If `alpha_bits` is 0, the reserved color is
-/// black. If `alpha_bits` is 1, the reserved color is transparent.
-///
-/// The remaining colors are created by interpolating between the first two
-/// colors in the palette.
-///
-/// The remaining 32 bits are 16 2-bit values acting as a lookups to specify
-/// the colors in the block.
-/// 
-/// See more at [wiki](http://en.wikipedia.org/wiki/S3TC)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dxt1Block {
-    pub color1: u16,
-    pub color2: u16,
-    pub color_indecies: u32, 
+impl BlpDxtn {
+    /// Predict internal locator to write down mipmaps
+    pub fn mipmap_locator(&self, version: BlpVersion) -> MipmapLocator {
+        let mut offsets = [0; 16];
+        let mut sizes = [0; 16];
+        let mut cur_offset = BlpHeader::size(version) + self.cmap.len() * 4;
+        for (i, image) in self.images.iter().take(16).enumerate() {
+            offsets[i] = cur_offset as u32;
+            sizes[i] = image.len() as u32;
+            cur_offset += image.len();
+        }
+
+        MipmapLocator::Internal { offsets, sizes }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlpDxt3 {
-    pub images: Vec<Dxt3Image>,
+pub struct DxtnImage {
+    pub content: Vec<u8>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dxt3Image {
-    pub blocks: Vec<Dxt3Block>,
-}
+impl DxtnImage {
+    /// Get size in bytes of serialized image
+    pub fn len(&self) -> usize {
+        self.content.len()
+    }
 
-/// Each block is 128 bits and begins identically to DXT1, except that no
-/// special color is reserved in the palette.
-///
-/// It is followed by 16 4-bit values corresponding to the alpha values for
-/// each of the pixels in the block.
-/// 
-/// See more at [wiki](http://en.wikipedia.org/wiki/S3TC)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dxt3Block {
-    pub color1: u16,
-    pub color2: u16,
-    pub color_indecies: u32, 
-    pub alphas: u64,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BlpDxt5 {
-    pub images: Vec<Dxt5Image>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dxt5Image {
-    pub blocks: Vec<Dxt5Block>,
-}
-
-/// Each block is 128 bits and begins with two 8-bit values to create an 8
-/// element lookup table for alpha values.
-///
-/// The first two elements in the lookup table are copies of those values.
-///
-/// If the first value is less than or equal to the second, the final two
-/// entries of the lookup table are reserved for transparent and opaque.
-///
-/// The remaining entries are created by interpolating between the first two
-/// entries in the lookup table.
-///
-/// The next 48 bits make up 16 3-bit values acting as lookups specifying
-/// the alpha values for each of the pixels in the block.
-///
-/// The remaining 64 bits are identical to DXT1, except that no special
-/// color is reserved in the palette.
-/// 
-/// See more at [wiki](http://en.wikipedia.org/wiki/S3TC)
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Dxt5Block {
-    pub alpha1: u8,
-    pub alpha2: u8,
-    pub alpha_indecies1: u32,
-    pub alpha_indecies2: u16,
-    pub color1: u16,
-    pub color2: u16,
-    pub color_indecies: u32, 
+    pub fn is_empty(&self) -> bool {
+        self.content.is_empty()
+    }
 }

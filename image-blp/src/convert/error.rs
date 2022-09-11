@@ -25,4 +25,6 @@ pub enum Error {
     ColorMapLengthInvalid(usize),
     #[error("Expected palette of 255 colors, but got {0}")]
     PaletteWrongSize(usize),
+    #[error("Failed to process bytes from DXT1 decomporession")]
+    Dxt1RawConvertFail,
 }
