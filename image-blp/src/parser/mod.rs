@@ -54,10 +54,10 @@ pub fn no_mipmaps<'a>(_: usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::
 
 /// Helper for `parse_blp` when external mipmaps are located in filesystem near the
 /// root file and loaded in memory when reading the main file. 
-pub fn preloaded_mipmaps<'a>(
-    mipmaps: &'a [Vec<u8>],
+pub fn preloaded_mipmaps(
+    mipmaps: &[Vec<u8>],
     i: usize,
-) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>> {
+) -> Result<Option<&[u8]>, Box<dyn std::error::Error>> {
     if i >= mipmaps.len() {
         Ok(None) 
     } else {

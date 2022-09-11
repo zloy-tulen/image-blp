@@ -251,7 +251,7 @@ fn encode_raw1(
         header,
         &content.cmap,
         &content.images,
-        |image, output| encode_raw1_image(image, output),
+        encode_raw1_image,
         output,
         mipmaps,
     )
@@ -267,7 +267,7 @@ fn encode_raw3(
         header,
         &content.cmap,
         &content.images,
-        |image, output| encode_raw3_image(image, output),
+        encode_raw3_image,
         output,
         mipmaps,
     )
@@ -341,7 +341,7 @@ fn encode_dxt1(header: &BlpHeader, content: &BlpDxt1, output: &mut Vec<u8>) -> R
     encode_dxtn(
         header,
         &content.images,
-        |img, v| encode_dxt1_image(img, v),
+        encode_dxt1_image,
         output,
     )
 }
@@ -350,7 +350,7 @@ fn encode_dxt3(header: &BlpHeader, content: &BlpDxt3, output: &mut Vec<u8>) -> R
     encode_dxtn(
         header,
         &content.images,
-        |img, v| encode_dxt3_image(img, v),
+        encode_dxt3_image,
         output,
     )
 }
@@ -359,7 +359,7 @@ fn encode_dxt5(header: &BlpHeader, content: &BlpDxt5, output: &mut Vec<u8>) -> R
     encode_dxtn(
         header,
         &content.images,
-        |img, v| encode_dxt5_image(img, v),
+        encode_dxt5_image,
         output,
     )
 }

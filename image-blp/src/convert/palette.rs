@@ -5,8 +5,6 @@ use ::image::RgbaImage;
 pub fn quantize_rgba(
     mut img: RgbaImage,
 ) -> Result<(Vec<u8>, Vec<u32>, color_quant::NeuQuant), Error> {
-    let width = img.width() as usize;
-    let height = img.height() as usize;
     let palette_size = 255; // last color in cmap is not used
     let sample_fact = 10; // speed-quality factor. 1 is best quality, 30 is best perf
 

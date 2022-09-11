@@ -28,14 +28,12 @@ pub fn raw1_to_image(
     let alpha_bits = header.alpha_bits();
     if alpha_bits == 0 {
         let mut res_image = RgbImage::new(width, height);
-        let mut i = 0;
-        for pixel in res_image.pixels_mut() {
+        for (i, pixel) in res_image.pixels_mut().enumerate() {
             let ci = raw_image.indexed_rgb[i];
             let color = image.cmap[ci as usize];
             pixel.0[0] = (color & 0xFF) as u8;
             pixel.0[1] = ((color >> 8) & 0xFF) as u8;
             pixel.0[2] = ((color >> 16) & 0xFF) as u8;
-            i += 1;
         }
         Ok(DynamicImage::ImageRgb8(res_image))
     } else if alpha_bits == 1 {
@@ -51,15 +49,13 @@ pub fn raw1_to_image(
         }
 
         let mut res_image = RgbaImage::new(width, height);
-        let mut i = 0;
-        for pixel in res_image.pixels_mut() {
+        for (i, pixel) in res_image.pixels_mut().enumerate() {
             let ci = raw_image.indexed_rgb[i];
             let color = image.cmap[ci as usize];
             pixel.0[0] = (color & 0xFF) as u8;
             pixel.0[1] = ((color >> 8) & 0xFF) as u8;
             pixel.0[2] = ((color >> 16) & 0xFF) as u8;
             pixel.0[3] = ((raw_image.indexed_alpha[i / 8] >> (i % 8)) & 0x01) as u8;
-            i += 1;
         }
         Ok(DynamicImage::ImageRgba8(res_image))
     } else if alpha_bits == 4 {
@@ -76,8 +72,7 @@ pub fn raw1_to_image(
         }
 
         let mut res_image = RgbaImage::new(width, height);
-        let mut i = 0;
-        for pixel in res_image.pixels_mut() {
+        for (i, pixel) in res_image.pixels_mut().enumerate() {
             let ci = raw_image.indexed_rgb[i];
             let color = image.cmap[ci as usize];
             pixel.0[0] = (color & 0xFF) as u8;
@@ -85,11 +80,10 @@ pub fn raw1_to_image(
             pixel.0[2] = ((color >> 16) & 0xFF) as u8;
             let alpha_block = raw_image.indexed_alpha[i / 2];
             pixel.0[3] = if i % 2 == 0 {
-                (alpha_block & 0xFF) as u8
+                alpha_block as u8
             } else {
-                ((alpha_block >> 4) & 0xFF) as u8
+                (alpha_block >> 4) as u8
             };
-            i += 1;
         }
         Ok(DynamicImage::ImageRgba8(res_image))
     } else if alpha_bits == 8 {
@@ -105,19 +99,17 @@ pub fn raw1_to_image(
         }
 
         let mut res_image = RgbaImage::new(width, height);
-        let mut i = 0;
-        for pixel in res_image.pixels_mut() {
+        for (i, pixel) in res_image.pixels_mut().enumerate() {
             let ci = raw_image.indexed_rgb[i];
             let color = image.cmap[ci as usize];
             pixel.0[0] = (color & 0xFF) as u8;
             pixel.0[1] = ((color >> 8) & 0xFF) as u8;
             pixel.0[2] = ((color >> 16) & 0xFF) as u8;
             pixel.0[3] = raw_image.indexed_alpha[i];
-            i += 1;
         }
         Ok(DynamicImage::ImageRgba8(res_image))
     } else {
-        return Err(Error::Raw1InvalidAlphaBits(alpha_bits));
+        Err(Error::Raw1InvalidAlphaBits(alpha_bits))
     }
 }
 
@@ -178,7 +170,7 @@ fn index_alpha_1bit(image: &RgbaImage) -> Vec<u8> {
                 i += 1;
                 res.push(0);
             }
-            res[i] = res[i] | if pixel[3] > 0 { 1 << bits } else { 0 };
+            res[i] |= if pixel[3] > 0 { 1 << bits } else { 0 };
             bits += 1;
         }
     }
@@ -201,7 +193,7 @@ fn index_alpha_4bit(image: &RgbaImage) -> Vec<u8> {
                 res.push(0);
             }
             let scaled_alpha = (((pixel[3] as f64) / 255.0) * 123.0) as u8;
-            res[i] = res[i] | scaled_alpha << bits;
+            res[i] |= scaled_alpha << bits;
             bits += 4;
         }
     }
@@ -222,12 +214,12 @@ fn index_alpha(image: &RgbaImage, alpha_bits: u32) -> Result<Vec<u8>, Error> {
     if alpha_bits == 0 {
         Ok(vec![])
     } else if alpha_bits == 1 {
-        Ok(index_alpha_1bit(&image))
+        Ok(index_alpha_1bit(image))
     } else if alpha_bits == 4 {
-        Ok(index_alpha_4bit(&image))
+        Ok(index_alpha_4bit(image))
     } else if alpha_bits == 8 {
-        Ok(index_alpha_8bit(&image))
+        Ok(index_alpha_8bit(image))
     } else {
-        return Err(Error::Raw1InvalidAlphaBits(alpha_bits));
+        Err(Error::Raw1InvalidAlphaBits(alpha_bits))
     }
 }

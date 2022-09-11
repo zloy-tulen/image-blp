@@ -30,7 +30,7 @@ where
         } => match blp_header.mipmap_locator {
             MipmapLocator::External => {
                 error!("BLP2 doesn't support external mipmaps!");
-                return Err(Err::Failure(Error::<&[u8]>::Blp2NoExternalMips));
+                Err(Err::Failure(Error::<&[u8]>::Blp2NoExternalMips))
             }
             MipmapLocator::Internal { offsets, sizes } => match compression {
                 Compression::Raw1 => {
@@ -107,9 +107,9 @@ where
                 }
                 Compression::Dxtc => {
                     error!("Alpha type {} is not supported for BLP2!", alpha_type);
-                    return Err(Err::Failure(Error::<&[u8]>::Blp2UnknownAlphaType(
+                    Err(Err::Failure(Error::<&[u8]>::Blp2UnknownAlphaType(
                         alpha_type,
-                    )));
+                    )))
                 }
             },
         },

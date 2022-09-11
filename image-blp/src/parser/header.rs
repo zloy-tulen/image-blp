@@ -23,14 +23,14 @@ pub fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
     });
     let (input, mut flags) = if version >= BlpVersion::Blp2 {
         let (input, compression_field) = context("compression field", le_u8)(input)?;
-        let compression: Compression = compression_field.try_into().or_else(|_| {
+        let compression: Compression = compression_field.try_into().map_err(|_| {
             error!(
                 "Unexpected value for compression {}, defaulting to jpeg",
                 content_field
             );
-            Err(Err::Failure(Error::<&[u8]>::Blp2UnknownCompression(
+            Err::Failure(Error::<&[u8]>::Blp2UnknownCompression(
                 compression_field,
-            )))
+            ))
         })?;
         let (input, alpha_bits) = context("alpha_bits field", le_u8)(input)?;
         let (input, alpha_type) = context("alpha_type field", le_u8)(input)?;
@@ -119,7 +119,7 @@ fn parse_magic(input: &[u8]) -> Parser<BlpVersion> {
     Ok((input, version))
 }
 
-fn parse_mipmap_locator<'a>(version: BlpVersion, input: &'a [u8]) -> Parser<'a, MipmapLocator> {
+fn parse_mipmap_locator(version: BlpVersion, input: &[u8]) -> Parser<MipmapLocator> {
     if version >= BlpVersion::Blp1 {
         let mut offsets: [u32; 16] = Default::default();
         let mut sizes: [u32; 16] = Default::default();

@@ -65,4 +65,8 @@ impl Raw1Image {
     pub fn len(&self) -> usize {
         self.indexed_rgb.len() + self.indexed_alpha.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.indexed_rgb.is_empty() && self.indexed_alpha.is_empty()
+    }
 }

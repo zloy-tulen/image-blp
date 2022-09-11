@@ -15,8 +15,8 @@ where
     let mut read_mipmap = |i| {
         let image_bytes_opt =
             external_mipmaps(i).map_err(|e| Err::Failure(Error::ExternalMipmap(i, e)))?;
-        let image_bytes = image_bytes_opt.ok_or_else(|| Err::Failure(Error::MissingImage(i)))?;
-        let (_, image) = parse_raw1_image(blp_header, i, &image_bytes)?;
+        let image_bytes = image_bytes_opt.ok_or(Err::Failure(Error::MissingImage(i)))?;
+        let (_, image) = parse_raw1_image(blp_header, i, image_bytes)?;
         images.push(image);
 
         Ok(())
