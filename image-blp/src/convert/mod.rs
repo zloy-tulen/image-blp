@@ -7,7 +7,8 @@ mod raw1;
 mod raw3;
 
 use crate::types::*;
-use ::image::{imageops::FilterType, DynamicImage};
+pub use ::image::imageops::FilterType;
+use ::image::DynamicImage;
 use dxtn::*;
 pub use error::Error;
 use jpeg::*;

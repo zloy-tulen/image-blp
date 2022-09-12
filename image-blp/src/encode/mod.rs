@@ -15,17 +15,21 @@ pub struct BlpWithMipmaps {
     pub blp_mipmaps: Vec<Vec<u8>>,
 }
 
-/// Save given BLP image to given path. For BLP0 it will create mipmap
-pub fn save_blp(image: &BlpImage, path: &Path) -> Result<(), Error> {
+/// Save given BLP image to given path. For BLP0 it will create mipmaps
+/// in the save directory with names like `<root_name>.b<num bitmap>`
+pub fn save_blp<Q>(image: &BlpImage, path: Q) -> Result<(), Error>
+where
+    Q: AsRef<Path>,
+{
     let BlpWithMipmaps {
         blp_bytes,
         blp_mipmaps,
     } = encode_blp_with_external(image)?;
-    std::fs::write(path, blp_bytes).map_err(|e| Error::FileSystem(path.to_owned(), e))?;
+    std::fs::write(&path, blp_bytes).map_err(|e| Error::FileSystem(path.as_ref().to_owned(), e))?;
     if !blp_mipmaps.is_empty() {
         for (i, image) in blp_mipmaps.iter().enumerate() {
-            let mipmap_path =
-                make_mipmap_path(path, i).ok_or_else(|| Error::FileNameInvalid(path.to_owned()))?;
+            let mipmap_path = make_mipmap_path(&path, i)
+                .ok_or_else(|| Error::FileNameInvalid(path.as_ref().to_owned()))?;
             std::fs::write(&mipmap_path, image)
                 .map_err(|e| Error::FileSystem(mipmap_path.to_owned(), e))?;
         }
@@ -163,13 +167,21 @@ fn encode_jpeg(
                 let padding = (if offset as usize >= output.len() {
                     Ok(offset as usize - output.len())
                 } else {
-                    Err(Error::InvalidOffset(i as u32, offset, output.len() as u32))
+                    Err(Error::InvalidOffset {
+                        mipmap: i,
+                        offset: offset as usize,
+                        filled: output.len(),
+                    })
                 })?;
                 if padding > 0 {
                     output.extend(repeat(0).take(padding));
                 }
                 if image.len() != size as usize {
-                    return Err(Error::InvalidMipmapSize(i as u32, size, image.len() as u32));
+                    return Err(Error::InvalidMipmapSize {
+                        mipmap: i,
+                        in_header: size as usize,
+                        actual: image.len(),
+                    });
                 }
                 output.extend(image);
             }
@@ -220,7 +232,11 @@ where
                 let padding = (if offset as usize >= output.len() {
                     Ok(offset as usize - output.len())
                 } else {
-                    Err(Error::InvalidOffset(i as u32, offset, output.len() as u32))
+                    Err(Error::InvalidOffset {
+                        mipmap: i,
+                        offset: offset as usize,
+                        filled: output.len(),
+                    })
                 })?;
                 if padding > 0 {
                     output.extend(repeat(0).take(padding));
@@ -228,11 +244,11 @@ where
                 let mut image_bytes = vec![];
                 encoder(image, &mut image_bytes);
                 if image_bytes.len() != size as usize {
-                    return Err(Error::InvalidMipmapSize(
-                        i as u32,
-                        size,
-                        image_bytes.len() as u32,
-                    ));
+                    return Err(Error::InvalidMipmapSize {
+                        mipmap: i,
+                        in_header: size as usize,
+                        actual: image_bytes.len(),
+                    });
                 }
                 output.extend(image_bytes);
             }
@@ -314,17 +330,21 @@ fn encode_dxtn(
         let padding = (if offset as usize >= output.len() {
             Ok(offset as usize - output.len())
         } else {
-            Err(Error::InvalidOffset(i as u32, offset, output.len() as u32))
+            Err(Error::InvalidOffset {
+                mipmap: i,
+                offset: offset as usize,
+                filled: output.len(),
+            })
         })?;
         if padding > 0 {
             output.extend(repeat(0).take(padding));
         }
         if image.content.len() != size as usize {
-            return Err(Error::InvalidMipmapSize(
-                i as u32,
-                size,
-                image.content.len() as u32,
-            ));
+            return Err(Error::InvalidMipmapSize {
+                mipmap: i,
+                in_header: size as usize,
+                actual: image.len(),
+            });
         }
         output.extend(&image.content);
     }

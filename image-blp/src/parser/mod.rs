@@ -18,20 +18,26 @@ use std::path::Path;
 use types::Parser;
 
 /// Read BLP file from file system. If it BLP0 format, uses the mipmaps near the root file.
-pub fn load_blp(path: &Path) -> Result<BlpImage, LoadError> {
-    let input = std::fs::read(path).map_err(|e| LoadError::FileSystem(path.to_owned(), e))?;
-    // We have to preload all mipmaps in memory as we are constrained with Nom 'a lifetime that 
-    // should be equal of lifetime of root input stream. 
+pub fn load_blp<Q>(path: Q) -> Result<BlpImage, LoadError>
+where
+    Q: AsRef<Path>,
+{
+    let input =
+        std::fs::read(&path).map_err(|e| LoadError::FileSystem(path.as_ref().to_owned(), e))?;
+    // We have to preload all mipmaps in memory as we are constrained with Nom 'a lifetime that
+    // should be equal of lifetime of root input stream.
     let mut mipmaps = vec![];
-    for i in 0 .. 16 {
-        let mipmap_path = make_mipmap_path(path, i).ok_or_else(|| LoadError::InvalidFilename(path.to_owned()))?;
+    for i in 0..16 {
+        let mipmap_path = make_mipmap_path(&path, i)
+            .ok_or_else(|| LoadError::InvalidFilename(path.as_ref().to_owned()))?;
         if mipmap_path.is_file() {
-            let mipmap = std::fs::read(mipmap_path).map_err(|e| LoadError::FileSystem(path.to_owned(), e))?;
+            let mipmap = std::fs::read(mipmap_path)
+                .map_err(|e| LoadError::FileSystem(path.as_ref().to_owned(), e))?;
             mipmaps.push(mipmap);
         } else {
             break;
         }
-    } 
+    }
 
     let image = match parse_blp_with_externals(&input, |i| preloaded_mipmaps(&mipmaps, i)) {
         Ok((_, image)) => Ok(image),
@@ -53,13 +59,13 @@ pub fn no_mipmaps<'a>(_: usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::
 }
 
 /// Helper for `parse_blp` when external mipmaps are located in filesystem near the
-/// root file and loaded in memory when reading the main file. 
+/// root file and loaded in memory when reading the main file.
 pub fn preloaded_mipmaps(
     mipmaps: &[Vec<u8>],
     i: usize,
 ) -> Result<Option<&[u8]>, Box<dyn std::error::Error>> {
     if i >= mipmaps.len() {
-        Ok(None) 
+        Ok(None)
     } else {
         Ok(Some(&mipmaps[i]))
     }

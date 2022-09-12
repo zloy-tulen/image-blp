@@ -9,10 +9,18 @@ pub enum Error {
     HeightTooHigh(u32),
     #[error("External mipmaps are not supported for the version {0}")]
     ExternalMipmapsNotSupported(BlpVersion),
-    #[error("Invalid offset {1} for mipmap {0}, filled bytes {2}")]
-    InvalidOffset(u32, u32, u32),
-    #[error("Size of mipmap {0} in header {1} doesn't match actual {2}")]
-    InvalidMipmapSize(u32, u32, u32),
+    #[error("Invalid offset {offset} for mipmap {mipmap}, filled bytes {filled}")]
+    InvalidOffset {
+        mipmap: usize, 
+        offset: usize,
+        filled: usize,
+    },
+    #[error("Size of mipmap {mipmap} in header {in_header} doesn't match actual {actual}")]
+    InvalidMipmapSize {
+        mipmap: usize, 
+        in_header: usize, 
+        actual: usize,
+    },
     #[error("Failed to proceed {0}, due: {1}")]
     FileSystem(std::path::PathBuf, std::io::Error),
     #[error("Name of root file is malformed: {0}")]
