@@ -10,7 +10,7 @@ pub fn parse_blp0<'a, F>(
     input: &'a [u8],
 ) -> Parser<'a, ()>
 where
-    F: FnMut(usize) -> Result<Option<&'a[u8]>, Box<dyn std::error::Error>>,
+    F: FnMut(usize) -> Result<Option<&'a [u8]>, Box<dyn std::error::Error>>,
 {
     let mut read_mipmap = |i| {
         let image_bytes_opt =

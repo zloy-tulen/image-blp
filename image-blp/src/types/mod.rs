@@ -5,9 +5,9 @@ pub mod jpeg;
 pub mod locator;
 pub mod version;
 
+pub use self::image::*;
 pub use direct::*;
 pub use header::*;
-pub use self::image::*;
 pub use jpeg::*;
 pub use locator::*;
 pub use version::*;

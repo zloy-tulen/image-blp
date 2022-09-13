@@ -48,7 +48,7 @@ impl fmt::Display for BlpVersion {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnknownBlpVersion(String);
 
 impl fmt::Display for UnknownBlpVersion {

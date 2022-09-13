@@ -17,7 +17,10 @@ mod tests {
 
     #[test]
     fn test_blp0_path() {
-        assert_eq!(make_mipmap_path("test.blp", 0).expect("path"), Path::new("test.b00"));
+        assert_eq!(
+            make_mipmap_path("test.blp", 0).expect("path"),
+            Path::new("test.b00")
+        );
         assert_eq!(
             make_mipmap_path("/root/dir/test.blp", 2).expect("path"),
             Path::new("/root/dir/test.b02")

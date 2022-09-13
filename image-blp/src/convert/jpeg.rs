@@ -10,7 +10,7 @@ use std::io::Cursor;
 
 pub fn jpeg_to_image(image: &BlpJpeg, mipmap_level: usize) -> Result<DynamicImage, Error> {
     let raw_jpeg = image
-        .get_full_jpeg(mipmap_level)
+        .full_jpeg(mipmap_level)
         .ok_or(Error::MissingImage(mipmap_level))?;
     let jpeg = ImageReader::with_format(Cursor::new(raw_jpeg), ImageFormat::Jpeg).decode()?;
     let mut rgba = jpeg.into_rgba8();
@@ -39,11 +39,14 @@ pub fn image_to_jpeg(
 
     let mut images: Vec<Vec<u8>> = if make_mipmaps {
         let images = generate_mipmaps(DynamicImage::ImageRgba8(rgba), mipmap_filter)?;
-        let jpeg_images: Result<Vec<Vec<u8>>, Error> = images.into_iter().map(|image| {
-            let mut image_bytes = vec![];
-            image.write_to(&mut Cursor::new(&mut image_bytes), ImageFormat::Jpeg)?;
-            Ok(image_bytes)
-        }).collect();
+        let jpeg_images: Result<Vec<Vec<u8>>, Error> = images
+            .into_iter()
+            .map(|image| {
+                let mut image_bytes = vec![];
+                image.write_to(&mut Cursor::new(&mut image_bytes), ImageFormat::Jpeg)?;
+                Ok(image_bytes)
+            })
+            .collect();
         jpeg_images?
     } else {
         let mut root_img = vec![];
@@ -51,7 +54,7 @@ pub fn image_to_jpeg(
         vec![root_img]
     };
     let mut header = fetch_common_header(&mut images);
-    // Add two padding bytes to the header as it always persists in War3 files 
+    // Add two padding bytes to the header as it always persists in War3 files
     header.extend(&vec![0; 2]);
     Ok(BlpJpeg { header, images })
 }
@@ -119,19 +122,20 @@ mod tests {
         let mut images00 = vec![vec![]];
         assert_eq!(fetch_common_header(&mut images00), vec![]);
 
-        let mut images1: Vec<Vec<u8>> = vec![(1 .. 10).collect()];
-        let result1: Vec<u8> = (1 .. 10).collect();
+        let mut images1: Vec<Vec<u8>> = vec![(1..10).collect()];
+        let result1: Vec<u8> = (1..10).collect();
         let header1 = fetch_common_header(&mut images1);
         assert_eq!(header1, result1);
         assert!(images1[0].is_empty());
 
-        let mut images2: Vec<Vec<u8>> = vec![vec![42; MAX_JPEG_HEADER+1]];
+        let mut images2: Vec<Vec<u8>> = vec![vec![42; MAX_JPEG_HEADER + 1]];
         let result2: Vec<u8> = vec![42; MAX_JPEG_HEADER];
         let header2 = fetch_common_header(&mut images2);
         assert_eq!(header2, result2);
         assert_eq!(images2[0], vec![42]);
 
-        let mut images3: Vec<Vec<u8>> = vec![vec![42; MAX_JPEG_HEADER+1], vec![42; MAX_JPEG_HEADER+1]];
+        let mut images3: Vec<Vec<u8>> =
+            vec![vec![42; MAX_JPEG_HEADER + 1], vec![42; MAX_JPEG_HEADER + 1]];
         let result3: Vec<u8> = vec![42; MAX_JPEG_HEADER];
         let header3 = fetch_common_header(&mut images3);
         assert_eq!(header3, result3);

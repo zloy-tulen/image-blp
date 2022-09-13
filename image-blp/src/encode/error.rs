@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::types::BlpVersion;
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -11,14 +11,14 @@ pub enum Error {
     ExternalMipmapsNotSupported(BlpVersion),
     #[error("Invalid offset {offset} for mipmap {mipmap}, filled bytes {filled}")]
     InvalidOffset {
-        mipmap: usize, 
+        mipmap: usize,
         offset: usize,
         filled: usize,
     },
     #[error("Size of mipmap {mipmap} in header {in_header} doesn't match actual {actual}")]
     InvalidMipmapSize {
-        mipmap: usize, 
-        in_header: usize, 
+        mipmap: usize,
+        in_header: usize,
         actual: usize,
     },
     #[error("Failed to proceed {0}, due: {1}")]

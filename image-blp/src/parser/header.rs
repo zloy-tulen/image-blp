@@ -28,9 +28,7 @@ pub fn parse_header(input: &[u8]) -> Parser<BlpHeader> {
                 "Unexpected value for compression {}, defaulting to jpeg",
                 content_field
             );
-            Err::Failure(Error::<&[u8]>::Blp2UnknownCompression(
-                compression_field,
-            ))
+            Err::Failure(Error::<&[u8]>::Blp2UnknownCompression(compression_field))
         })?;
         let (input, alpha_bits) = context("alpha_bits field", le_u8)(input)?;
         let (input, alpha_type) = context("alpha_type field", le_u8)(input)?;

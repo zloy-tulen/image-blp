@@ -33,8 +33,7 @@ where
         MipmapLocator::External => {
             let image0_bytes_opt =
                 external_mipmaps(0).map_err(|e| Err::Failure(Error::ExternalMipmap(0, e)))?;
-            let image0_bytes =
-                image0_bytes_opt.ok_or(Err::Failure(Error::MissingImage(0)))?;
+            let image0_bytes = image0_bytes_opt.ok_or(Err::Failure(Error::MissingImage(0)))?;
             images.push(image0_bytes.to_vec());
 
             if blp_header.has_mipmaps() {

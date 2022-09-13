@@ -13,7 +13,7 @@ pub enum BlpContentTag {
     Direct,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnknownContent(u32);
 
 impl fmt::Display for UnknownContent {
@@ -43,7 +43,7 @@ impl From<BlpContentTag> for u32 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BlpHeader {
     pub version: BlpVersion,
     pub content: BlpContentTag,
@@ -109,7 +109,7 @@ impl BlpHeader {
         + 4 // height
         + if version < BlpVersion::Blp2 {8} else {0} // extra and has_mipmaps
         + if version > BlpVersion::Blp0 {16*4*2} else {0} // mipmap locator
-    } 
+    }
 }
 
 impl Default for BlpHeader {
@@ -133,7 +133,7 @@ pub enum Compression {
     Dxtc,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct UnknownCompression(u8);
 
 impl fmt::Display for UnknownCompression {
@@ -168,7 +168,7 @@ impl From<Compression> for u8 {
 }
 
 /// Part of header that depends on the version
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum BlpFlags {
     /// For version >= 2
     Blp2 {

@@ -3,7 +3,7 @@ use super::super::{
     locator::MipmapLocator,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BlpRaw3 {
     /// The cmap field array is the colour look up table used for an indexed
     /// colour model. Each element represents 24 bit RGB colour component values
@@ -37,7 +37,7 @@ impl BlpRaw3 {
 /// rather than depth, as all images of this type seem to have 4 bytes per
 /// pixel regardless of depth, and it has been seen to exceed 8. Their
 /// meaning is unknown.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Raw3Image {
     pub pixels: Vec<u32>,
 }

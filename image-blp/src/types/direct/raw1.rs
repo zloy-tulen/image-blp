@@ -3,7 +3,7 @@ use crate::types::{
     locator::MipmapLocator,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BlpRaw1 {
     /// The cmap field array is the colour look up table used for an indexed
     /// colour model. Each element represents 24 bit RGB colour component values
@@ -32,7 +32,7 @@ impl BlpRaw1 {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Raw1Image {
     /// BGR component values can be obtained by using indexedRGB values as an
     /// index in lutBGR. When producing such values using color matching be

@@ -1,3 +1,12 @@
+//! The CLI tool that allows to convert from/to Blizzard BLP file
+//! format. The tool is built on the library [image-blp].
+//!
+//! To install it one should call:
+//! ```bash
+//! cargo install blp-conv
+//! ```
+//!
+//! [image-blp]: https://crates.io/crates/image-blp
 use ::image::{error::ImageError, imageops::FilterType, io::Reader as ImageReader, ImageFormat};
 use clap::{Parser, ValueEnum};
 use image_blp::{convert::*, encode::error::Error as EncodeError, encode::save_blp, types::*};

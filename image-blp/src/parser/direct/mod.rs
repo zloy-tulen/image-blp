@@ -36,7 +36,7 @@ where
                 Compression::Jpeg => {
                     // Should not go there as we process JPEG on content tag branching
                     // Although, BLP2 never uses JPEG, that branch is for totality of the code.
-                    return Err(Err::Failure(Error::Blp2UnexpectedJpegCompression));
+                    Err(Err::Failure(Error::Blp2UnexpectedJpegCompression))
                 }
                 Compression::Raw1 => {
                     let mut images = vec![];
@@ -81,7 +81,14 @@ where
                             input,
                         )
                     })(input)?;
-                    Ok((input, BlpContent::Dxt1(BlpDxtn { format, cmap, images })))
+                    Ok((
+                        input,
+                        BlpContent::Dxt1(BlpDxtn {
+                            format,
+                            cmap,
+                            images,
+                        }),
+                    ))
                 }
                 Compression::Dxtc if alpha_type == 1 => {
                     let format = DxtnFormat::Dxt3;
@@ -98,7 +105,14 @@ where
                         )
                     })(input)?;
 
-                    Ok((input, BlpContent::Dxt3(BlpDxtn { format, cmap, images })))
+                    Ok((
+                        input,
+                        BlpContent::Dxt3(BlpDxtn {
+                            format,
+                            cmap,
+                            images,
+                        }),
+                    ))
                 }
                 Compression::Dxtc if alpha_type == 7 => {
                     let format = DxtnFormat::Dxt5;
@@ -114,7 +128,14 @@ where
                             input,
                         )
                     })(input)?;
-                    Ok((input, BlpContent::Dxt5(BlpDxtn { format, cmap, images })))
+                    Ok((
+                        input,
+                        BlpContent::Dxt5(BlpDxtn {
+                            format,
+                            cmap,
+                            images,
+                        }),
+                    ))
                 }
                 Compression::Dxtc => {
                     error!("Alpha type {} is not supported for BLP2!", alpha_type);

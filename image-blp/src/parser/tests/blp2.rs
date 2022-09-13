@@ -9,10 +9,7 @@ fn blp2_test(name: &str, blp_bytes: &[u8], header: &BlpHeader) {
         .internal_mipmaps()
         .map(|(offsets, _)| offsets.iter().filter(|a| **a > 0).count())
         .unwrap_or(0);
-    assert_eq!(
-        parsed.get_image_count(),
-        expected_mipmaps
-    );
+    assert_eq!(parsed.image_count(), expected_mipmaps);
     let encoded = encode_blp(&parsed).expect("encoded blp");
     assert_eq!(encoded, blp_bytes);
     // Test File API

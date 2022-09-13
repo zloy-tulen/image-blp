@@ -13,7 +13,7 @@ fn test_blp0(
     let (_, parsed) = parse_blp_with_externals(blp_bytes, |i| preloaded_mipmaps(blp_mipmaps, i))
         .expect("successfull parsing");
     assert_eq!(&parsed.header, expected_header);
-    assert_eq!(parsed.get_image_count(), expected_images);
+    assert_eq!(parsed.image_count(), expected_images);
     let encoded = encode_blp0(&parsed).expect("encoded blp");
     // There are zeros in the original file at the end
     let blp_bytes_n: Vec<u8> = blp_bytes

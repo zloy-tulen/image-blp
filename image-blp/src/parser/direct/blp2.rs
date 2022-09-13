@@ -105,7 +105,8 @@ pub fn parse_dxtn<'a>(
         let n = blp_header.mipmap_pixels(i);
         let blocks_n = ((n as f32) / 16.0).ceil() as usize;
 
-        let (_, content) = context("dxtn blocks", count(le_u8, blocks_n * dxtn.block_size()))(image_bytes)?;
+        let (_, content) =
+            context("dxtn blocks", count(le_u8, blocks_n * dxtn.block_size()))(image_bytes)?;
         images.push(DxtnImage { content });
         Ok(())
     };

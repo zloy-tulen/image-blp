@@ -1,7 +1,10 @@
-use super::super::{locator::MipmapLocator, header::{BlpVersion, BlpHeader}};
+use super::super::{
+    header::{BlpHeader, BlpVersion},
+    locator::MipmapLocator,
+};
 
-/// Which compression algorithm is used to compress the image 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Which compression algorithm is used to compress the image
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum DxtnFormat {
     Dxt1,
     Dxt3,
@@ -28,7 +31,7 @@ impl DxtnFormat {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BlpDxtn {
     pub format: DxtnFormat,
     pub cmap: Vec<u32>,
@@ -51,7 +54,7 @@ impl BlpDxtn {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DxtnImage {
     pub content: Vec<u8>,
 }

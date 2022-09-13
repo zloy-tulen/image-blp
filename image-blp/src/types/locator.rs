@@ -1,5 +1,5 @@
 /// Descibes where to search for mipmaps
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MipmapLocator {
     /// Mipmaps are located inside the BLP file with given offsets
     /// and sizes.
