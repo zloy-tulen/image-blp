@@ -4,6 +4,7 @@ version = "1.0.0"
 edition = "2021"
 license = "MIT"
 description = "Library to encode/decode Blizzard BLP texture format"
+repository = "https://github.com/zloy-tulen/image-blp.git"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
