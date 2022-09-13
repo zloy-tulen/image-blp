@@ -10,7 +10,7 @@ repository = "https://github.com/zloy-tulen/image-blp.git"
 
 [dependencies]
 clap = { version = "3.2.19", features = ["derive"] }
-image-blp = { path = "../image-blp" }
+image-blp = { version = "1", path = "../image-blp" }
 env_logger = "0.9.0"
 log = "0.4.17"
 thiserror = "1.0.34"
