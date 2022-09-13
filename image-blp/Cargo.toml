@@ -1,10 +1,15 @@
 [package]
 name = "image-blp"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 license = "MIT"
 description = "Library to encode/decode Blizzard BLP texture format"
 repository = "https://github.com/zloy-tulen/image-blp.git"
+documentation = "https://docs.rs/image-blp"
+authors = ["zloy_tulen <zloy_tulen@proton.me>"]
+readme = "../README.md"
+keywords = ["blp", "texture", "image", "war3", "warcraft"]
+categories = ["multimedia::images", "multimedia::encoding"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
