@@ -294,3 +294,25 @@ fn test_hell_fire_sky_nebula_03() {
     };
     blp2_test("HellFireSkyNebula03", blp_bytes, &header);
 }
+
+#[test]
+fn test_achievement_metal_border_left() {
+    let blp_bytes = include_bytes!("../../../../assets/blp2/UI-Achievement-MetalBorder-Left.blp");
+    let header = BlpHeader {
+        version: BlpVersion::Blp2,
+        content: BlpContentTag::Direct,
+        flags: BlpFlags::Blp2 {
+            compression: Compression::Dxtc,
+            alpha_bits: 8,
+            alpha_type: 7,
+            has_mipmaps: 1,
+        },
+        width: 16,
+        height: 512,
+        mipmap_locator: MipmapLocator::Internal {
+            offsets: [1172, 9364, 11412, 11924, 11940, 11956, 11972, 11988, 12004, 12020, 0, 0, 0, 0, 0, 0],
+            sizes: [8192, 2048, 512, 16, 16, 16, 16, 16, 16, 16, 0, 0, 0, 0, 0, 0],
+        },
+    };
+    blp2_test("UI-Achievement-MetalBorder-Left", blp_bytes, &header);
+}

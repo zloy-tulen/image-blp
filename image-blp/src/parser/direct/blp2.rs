@@ -104,9 +104,18 @@ pub fn parse_dxtn<'a>(
         let image_bytes = &original_input[offset as usize..(offset + size) as usize];
         let n = blp_header.mipmap_pixels(i);
         let blocks_n = ((n as f32) / 16.0).ceil() as usize;
-
+        let mut blocks_size = blocks_n * dxtn.block_size();
+        trace!("Dxtn blocks count: {blocks_n}");
+        trace!("Dxtn format: {dxtn:?}, block size: {}", dxtn.block_size());
+        trace!("Left size: {}, expected size: {}", image_bytes.len(), blocks_size);
+        if blocks_size > image_bytes.len() {
+            warn!("Data is smaller than expected! Trying to read only whole number of blocks");
+            let new_blocks_n = image_bytes.len() / dxtn.block_size();
+            warn!("Reading {new_blocks_n} blocks");
+            blocks_size = new_blocks_n * dxtn.block_size();
+        }
         let (_, content) =
-            context("dxtn blocks", count(le_u8, blocks_n * dxtn.block_size()))(image_bytes)?;
+            context("dxtn blocks", count(le_u8, blocks_size))(image_bytes)?;
         images.push(DxtnImage { content });
         Ok(())
     };
