@@ -14,7 +14,7 @@ pub use error::{Error, LoadError};
 use header::parse_header;
 use jpeg::parse_jpeg_content;
 use nom::error::context;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use types::Parser;
 
 /// Read BLP file from file system. If it BLP0 format, uses the mipmaps near the root file.
@@ -24,22 +24,40 @@ where
 {
     let input =
         std::fs::read(&path).map_err(|e| LoadError::FileSystem(path.as_ref().to_owned(), e))?;
+    load_blp_ex(Some(path), &input)
+}
+
+/// Read BLP file from buffer(Vec<u8>). If it BLP0 format, uses the mipmaps in the temp dir.
+/// 
+/// Since: 1.2.0
+pub fn load_blp_from_buf(buf: &[u8]) -> Result<BlpImage, LoadError> {
+    let input = buf;
+    let path: Option<PathBuf> = None;
+    load_blp_ex(path, input)
+}
+
+fn load_blp_ex<Q>(path: Option<Q>, input: &[u8]) -> Result<BlpImage, LoadError>
+where
+    Q: AsRef<Path>,
+{
     // We have to preload all mipmaps in memory as we are constrained with Nom 'a lifetime that
     // should be equal of lifetime of root input stream.
     let mut mipmaps = vec![];
-    for i in 0..16 {
-        let mipmap_path = make_mipmap_path(&path, i)
-            .ok_or_else(|| LoadError::InvalidFilename(path.as_ref().to_owned()))?;
-        if mipmap_path.is_file() {
-            let mipmap = std::fs::read(mipmap_path)
-                .map_err(|e| LoadError::FileSystem(path.as_ref().to_owned(), e))?;
-            mipmaps.push(mipmap);
-        } else {
-            break;
+    if let Some(path) = path.as_ref() {
+        for i in 0..16 {
+            let mipmap_path = make_mipmap_path(path, i)
+                .ok_or_else(|| LoadError::InvalidFilename(path.as_ref().to_owned()))?;
+            if mipmap_path.is_file() {
+                let mipmap = std::fs::read(mipmap_path)
+                    .map_err(|e| LoadError::FileSystem(path.as_ref().to_owned(), e))?;
+                mipmaps.push(mipmap);
+            } else {
+                break;
+            }
         }
     }
 
-    let image = match parse_blp_with_externals(&input, |i| preloaded_mipmaps(&mipmaps, i)) {
+    let image = match parse_blp_with_externals(input, |i| preloaded_mipmaps(&mipmaps, i)) {
         Ok((_, image)) => Ok(image),
         Err(nom::Err::Incomplete(needed)) => Err(LoadError::Incomplete(needed)),
         Err(nom::Err::Error(e)) => Err(LoadError::Parsing(format!("{}", e))),

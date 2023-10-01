@@ -1,6 +1,6 @@
 [package]
 name = "image-blp"
-version = "1.1.0"
+version = "1.2.0"
 edition = "2021"
 license = "MIT"
 description = "Library to encode/decode Blizzard BLP texture format"
