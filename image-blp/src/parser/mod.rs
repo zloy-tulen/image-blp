@@ -28,7 +28,7 @@ where
 }
 
 /// Read BLP file from buffer(Vec<u8>). If it BLP0 format, uses the mipmaps in the temp dir.
-/// 
+///
 /// Since: 1.2.0
 pub fn load_blp_from_buf(buf: &[u8]) -> Result<BlpImage, LoadError> {
     let input = buf;

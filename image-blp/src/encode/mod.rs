@@ -152,7 +152,7 @@ fn encode_jpeg(
         }
         MipmapLocator::Internal { offsets, sizes } => {
             let mut pairs: Vec<(u32, u32)> = zip(offsets, sizes)
-                .take((header.mipmaps_count() + 1) as usize)
+                .take(header.mipmaps_count() + 1)
                 .filter(|(_, size)| *size > 0)
                 .collect();
             pairs.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).expect("number cmp"));
@@ -217,7 +217,7 @@ where
         }
         MipmapLocator::Internal { offsets, sizes } => {
             let mut pairs: Vec<(u32, u32)> = zip(offsets, sizes)
-                .take((header.mipmaps_count() + 1) as usize)
+                .take(header.mipmaps_count() + 1)
                 .filter(|(_, size)| *size > 0)
                 .collect();
             pairs.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).expect("number cmp"));
@@ -314,7 +314,7 @@ fn encode_dxtn(
     };
 
     let mut pairs: Vec<(u32, u32)> = zip(offsets, sizes)
-        .take((header.mipmaps_count() + 1) as usize)
+        .take(header.mipmaps_count() + 1)
         .filter(|(_, size)| *size > 0)
         .collect();
     pairs.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).expect("number cmp"));

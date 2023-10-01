@@ -25,7 +25,7 @@ pub enum Error {
     #[error("Failed to convert file {0} due: {1}")]
     Convert(PathBuf, image_blp::convert::Error),
     #[error("Saving converted image from {0} to {1} failed due: {2}")]
-    SaveError(PathBuf, PathBuf, ImageError),
+    SaveError(PathBuf, PathBuf, Box<ImageError>),
     #[error("Saving converted image from {0} to {1} failed due: {2}")]
     BlpSaveError(PathBuf, PathBuf, EncodeError),
     #[error("Cannot find required level {1} of mipmaps for {0}")]
@@ -37,7 +37,7 @@ pub enum Error {
     #[error("Failed to open image {0} due {1}")]
     ImageOpenError(PathBuf, std::io::Error),
     #[error("Failed to decode image {0} due {1}")]
-    ImageDecodeError(PathBuf, ImageError),
+    ImageDecodeError(PathBuf, Box<ImageError>),
 }
 
 /// Input images that we can decode
@@ -466,7 +466,7 @@ fn run_conv() -> Result<(), Error> {
         ImageReader::open(&args.input_file)
             .map_err(|e| Error::ImageOpenError(args.input_file.clone(), e))?
             .decode()
-            .map_err(|e| Error::ImageDecodeError(args.input_file.clone(), e))?
+            .map_err(|e| Error::ImageDecodeError(args.input_file.clone(), Box::new(e)))?
     };
 
     match output_format {
@@ -490,7 +490,11 @@ fn run_conv() -> Result<(), Error> {
             input_image
                 .save_with_format(&args.output_file, img_format)
                 .map_err(|e| {
-                    Error::SaveError(args.input_file.clone(), args.output_file.clone(), e)
+                    Error::SaveError(
+                        args.input_file.clone(),
+                        args.output_file.clone(),
+                        Box::new(e),
+                    )
                 })?;
         }
     }

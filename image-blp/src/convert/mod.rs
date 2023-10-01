@@ -91,7 +91,7 @@ impl fmt::Display for BlpOldFormat {
 }
 
 /// Allowed alpha bits values for Raw1 encoding
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 pub enum AlphaBits {
     /// No alpha channel. 0 bits.
     NoAlpha,
@@ -100,13 +100,8 @@ pub enum AlphaBits {
     /// 4 bits per pixel.
     Bit4,
     /// 8 bits per pixel.
+    #[default]
     Bit8,
-}
-
-impl Default for AlphaBits {
-    fn default() -> Self {
-        AlphaBits::Bit8
-    }
 }
 
 impl fmt::Display for AlphaBits {

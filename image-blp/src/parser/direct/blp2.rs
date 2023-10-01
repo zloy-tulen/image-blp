@@ -57,8 +57,13 @@ pub fn parse_raw3<'a>(
     trace!("Mipmaps count: {}", blp_header.mipmaps_count());
     read_image(0)?;
     if blp_header.has_mipmaps() {
-        for i in 1..(blp_header.mipmaps_count() + 1).min(16) {
-            if sizes[i as usize] == 0 {
+        for (i, &size) in sizes
+            .iter()
+            .enumerate()
+            .take((blp_header.mipmaps_count() + 1).min(16))
+            .skip(1)
+        {
+            if size == 0 {
                 trace!("Size of mipmap {} is 0 bytes, I stop reading of images", i);
                 break;
             }
